@@ -17,7 +17,7 @@ from mani_skill.utils.structs.types import SimConfig
 
 
 @register_env("PickCube-v1_allegro", max_episode_steps=50)
-class PickCubeEnv(BaseEnv):
+class PickCubeEnvAllegro(BaseEnv):
     SUPPORTED_ROBOTS = ["panda", "fetch", "panda_allegro"]
     agent: Union[Panda, Fetch, Panda_Allegro]
     cube_half_size = 0.02
