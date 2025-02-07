@@ -4,7 +4,8 @@ import numpy as np
 import torch
 
 import mani_skill.envs.utils.randomization as randomization
-from mani_skill.agents.robots import Fetch, Panda, panda_allegro
+from mani_skill.agents.robots import Fetch, Panda
+from mani_skill.agents.robots.panda_allegro import Panda_Allegro
 from mani_skill.envs.sapien_env import BaseEnv
 from mani_skill.sensors.camera import CameraConfig
 from mani_skill.utils import sapien_utils
@@ -18,7 +19,7 @@ from mani_skill.utils.structs.types import SimConfig
 @register_env("PickCube-v1_allegro", max_episode_steps=50)
 class PickCubeEnv(BaseEnv):
     SUPPORTED_ROBOTS = ["panda", "fetch", "panda_allegro"]
-    agent: Union[Panda, Fetch, panda_allegro.Panda_Allegro]
+    agent: Union[Panda, Fetch, Panda_Allegro]
     cube_half_size = 0.02
     goal_thresh = 0.025
 
