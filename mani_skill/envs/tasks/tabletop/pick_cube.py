@@ -45,7 +45,7 @@ class PickCubeEnv(BaseEnv):
     cube_half_size = 0.02
     goal_thresh = 0.025
 
-    def __init__(self, *args, robot_uids="panda", robot_init_qpos_noise=0.02, **kwargs):
+    def __init__(self, *args, robot_uids="xarm6_allegro_right", robot_init_qpos_noise=0.02, **kwargs):
         self.robot_init_qpos_noise = robot_init_qpos_noise
         super().__init__(*args, robot_uids=robot_uids, **kwargs)
 
