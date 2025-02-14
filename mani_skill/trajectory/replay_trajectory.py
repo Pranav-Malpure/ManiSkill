@@ -262,6 +262,15 @@ def replay_cpu_sim(
             tqdm.write(f"{traj_id} does not exist in {args.traj_path}")
             continue
 
+        reset_kwargs = episode["reset_kwargs"].copy()
+        if "seed" in reset_kwargs:
+            assert reset_kwargs["seed"] == episode["episode_seed"][0]
+        else:
+            reset_kwargs["seed"] = episode["episode_seed"][0]
+        seed = reset_kwargs.pop("seed")
+
+        ori_control_mode = episode["control_mode"]
+
         for _ in range(args.max_retry + 1):
             # Each trial for each trajectory to replay, we reset the environment
             # and optionally set the first environment state

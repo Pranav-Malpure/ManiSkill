@@ -212,7 +212,6 @@ class XArm6Robotiq(BaseAgent):
         # -------------------------------------------------------------------------- #
         # Gripper
         # -------------------------------------------------------------------------- #
-
         # Define a passive controller config to simply "turn off" other joints from being controlled and set their properties (damping/friction) to 0.
         # These joints are controlled passively by the mimic controller later on.
         passive_finger_joint_names = [
@@ -227,7 +226,6 @@ class XArm6Robotiq(BaseAgent):
             damping=0,
             friction=0,
         )
-
         finger_joint_names = ["left_outer_knuckle_joint", "right_outer_knuckle_joint"]
 
         # Use a mimic controller config to define one action to control both fingers

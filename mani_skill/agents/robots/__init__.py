@@ -7,7 +7,6 @@ from .floating_robotiq_2f_85_gripper import *
 from .googlerobot import *
 from .humanoid import Humanoid
 from .panda import *
-from .panda_allegro import *
 from .stompy import Stompy
 from .trifingerpro import TriFingerPro
 from .unitree_g1 import *

@@ -66,6 +66,7 @@ def main(args: Args):
     if args.render_mode == "human" and args.num_envs == 1:
         parallel_in_single_scene = False
     env_kwargs = dict(
+        robot_uids=args.robot_uids,
         obs_mode=args.obs_mode,
         reward_mode=args.reward_mode,
         control_mode=args.control_mode,
