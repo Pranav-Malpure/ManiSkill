@@ -122,8 +122,9 @@ class PickCubeEnv(BaseEnv):
             torch.linalg.norm(self.goal_site.pose.p - self.cube.pose.p, axis=1)
             <= self.goal_thresh
         )
-        is_grasped = self.agent.is_grasping(self.cube)
-        is_robot_static = self.agent.is_static(0.2)
+        # is_grasped = self.agent.is_grasping(self.cube)
+        is_grasped = self.agent.is_grasping(self.cube_half_size, self.cube)
+        is_robot_static = self.agent.is_static(0.2) # threshold is 0.2 here
         return {
             "success": is_obj_placed & is_robot_static,
             "is_obj_placed": is_obj_placed,
@@ -180,8 +181,48 @@ class PickCubeEnv(BaseEnv):
 
         reward[info["success"]] = 5
         return reward
+    
+    def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
+        tcp_to_obj_dist = torch.linalg.norm(
+            self.cube.pose.p - self.agent.tcp.pose.p, axis=1
+        )
+        reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
+        reward = reaching_reward
+
+        is_grasped = info["is_grasped"]/3
+        reward += is_grasped
+
+        obj_to_goal_dist = torch.linalg.norm(
+            self.goal_site.pose.p - self.cube.pose.p, axis=1
+        )
+        place_reward = 1 - torch.tanh(5 * obj_to_goal_dist)
+        reward += place_reward * is_grasped
+
+        qvel_without_gripper = self.agent.robot.get_qvel()
+        if self.robot_uids == "xarm6_robotiq":
+            qvel_without_gripper = qvel_without_gripper[..., :-6]
+        elif self.robot_uids == "panda":
+            qvel_without_gripper = qvel_without_gripper[..., :-2]
+        static_reward = 1 - torch.tanh(
+            5 * torch.linalg.norm(qvel_without_gripper, axis=1)
+        )
+        reward += static_reward * info["is_obj_placed"]
+
+        object_grabbing_closeness = self.agent.object_reward(self.cube)
+        if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
+            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
+            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
+            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,2])
+            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
+            
+        reward[info["success"]] = 5
+        return reward
 
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 5
+        # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
+
+    def debug(self):
+      self.agent.debug()
