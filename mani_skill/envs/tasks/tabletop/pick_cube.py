@@ -209,12 +209,17 @@ class PickCubeEnv(BaseEnv):
         reward += static_reward * info["is_obj_placed"]
 
         object_grabbing_closeness = self.agent.object_reward(self.cube)
-        if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
-            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
-            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
-            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,2])
-            reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
+        # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
+        #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
+        #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
+        #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,2])
+        #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
             
+        mask = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
+        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 0]))
+        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
+        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
+        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
         reward[info["success"]] = 5
         return reward
 
