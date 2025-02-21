@@ -451,14 +451,15 @@ class XArm6AllegroRight(BaseAgent):
         finger2_distance = torch.linalg.norm(finger2_position - object_position, axis=1)
         finger3_distance = torch.linalg.norm(finger3_position - object_position, axis=1)
 
+
         confidence = 0
-        if thumb_distance <= cube_half_size*np.sqrt(2) + 0.016:
-            if finger1_distance <= cube_half_size*np.sqrt(2) + 0.016:
-                confidence+=1    
-            if finger2_distance <= cube_half_size*np.sqrt(2) + 0.016:
-                confidence+=1
-            if finger3_distance <= cube_half_size*np.sqrt(2) + 0.016:
-                confidence+=1
+        threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
+        confidence = (
+        (thumb_distance <= threshold).int() +
+        (finger1_distance <= threshold).int() +
+        (finger2_distance <= threshold).int() +
+        (finger3_distance <= threshold).int())
+        
         return confidence
     
     def object_reward(self, object: Actor, min_force=0.5, max_angle=85):
