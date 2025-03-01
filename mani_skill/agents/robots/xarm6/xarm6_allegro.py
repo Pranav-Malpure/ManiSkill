@@ -454,12 +454,20 @@ class XArm6AllegroRight(BaseAgent):
 
         confidence = 0
         threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
-        confidence = (
-        (thumb_distance <= threshold).int() +
+        # confidence = (
+        # (thumb_distance <= threshold).int() +
+        # (finger1_distance <= threshold).int() +
+        # (finger2_distance <= threshold).int() +
+        # (finger3_distance <= threshold).int())
+
+        confidence = torch.where(
+        thumb_distance <= threshold,  # Condition: Thumb must be within threshold
         (finger1_distance <= threshold).int() +
         (finger2_distance <= threshold).int() +
-        (finger3_distance <= threshold).int())
-        
+        (finger3_distance <= threshold).int(),
+        torch.tensor(0, device=thumb_distance.device)  # If thumb fails, confidence = 0
+        )
+
         return confidence
     
     def object_reward(self, object: Actor, min_force=0.5, max_angle=85):
@@ -487,6 +495,7 @@ class XArm6AllegroRight(BaseAgent):
         print(self.tip_links[1].pose.to_transformation_matrix())
         print(self.tip_links[2].pose.to_transformation_matrix()[..., :3, 1])
         print(self.tip_links[3].pose.to_transformation_matrix()[..., :3, 1])
+        print(self.arm_joint_names[4])
 
 @register_agent()
 class XArm6AllegroLeft(XArm6AllegroRight):

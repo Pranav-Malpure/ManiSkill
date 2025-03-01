@@ -189,7 +189,7 @@ class PickCubeEnv(BaseEnv):
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
 
-        is_grasped = info["is_grasped"]/3
+        is_grasped = info["is_grasped"]/4
         reward += is_grasped
 
         obj_to_goal_dist = torch.linalg.norm(
@@ -221,6 +221,11 @@ class PickCubeEnv(BaseEnv):
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
         reward[info["success"]] = 5
+
+        joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
+        joint_5_pos = joint_pos[..., 4]
+        reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
+
         return reward
 
     def compute_normalized_dense_reward(
@@ -230,4 +235,5 @@ class PickCubeEnv(BaseEnv):
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
+      self.agent.robot.get_join_pos()
       self.agent.debug()
