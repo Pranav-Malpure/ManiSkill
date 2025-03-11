@@ -42,7 +42,7 @@ class PickCubeEnv(BaseEnv):
         "xarm6_pandagripper"
     ]
     agent: Union[Panda, Fetch, XArm6Robotiq, XArm6AllegroLeft, XArm6AllegroRight, FloatingRobotiq2F85Gripper, XArm6PandaGripper]
-    cube_half_size = 0.02
+    cube_half_size = 0.03
     goal_thresh = 0.025
 
     def __init__(self, *args, robot_uids="xarm6_allegro_right", robot_init_qpos_noise=0.02, **kwargs):
@@ -183,8 +183,10 @@ class PickCubeEnv(BaseEnv):
         return reward
     
     def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
+        cube_position_z_offseted = self.cube.pose.p
+        cube_position_z_offseted[:, 2] += 0.015
         tcp_to_obj_dist = torch.linalg.norm(
-            self.cube.pose.p - self.agent.tcp.pose.p, axis=1
+            cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
         reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
         reward = reaching_reward
@@ -236,5 +238,6 @@ class PickCubeEnv(BaseEnv):
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
-      self.agent.robot.get_join_pos()
-      self.agent.debug()
+        self.agent.robot.get_qpos()
+        print(self.cube.pose.p)
+        self.agent.debug()
