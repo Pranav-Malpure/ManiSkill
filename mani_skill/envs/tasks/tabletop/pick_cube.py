@@ -229,6 +229,10 @@ class PickCubeEnv(BaseEnv):
         # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
         reward += 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
 
+        joint_6_pos = joint_pos[..., 5]
+        reward += (1 - torch.tanh(torch.abs(8*joint_6_pos)-2))/4 # to encourage the wrist to be close to 0
+
+
         return reward
 
     def compute_normalized_dense_reward(
