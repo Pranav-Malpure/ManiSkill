@@ -107,7 +107,7 @@ class XArm6AllegroRight(BaseAgent):
         "joint3",
         "joint4",
         "joint5",
-        "joint6",
+        # "joint6",
     ]
     gripper_joint_names = [
         "joint_0.0",
@@ -464,7 +464,8 @@ class XArm6AllegroRight(BaseAgent):
         thumb_distance <= threshold,  # Condition: Thumb must be within threshold
         (finger1_distance <= threshold).int() +
         (finger2_distance <= threshold).int() +
-        (finger3_distance <= threshold).int(),
+        (finger3_distance <= threshold).int() +
+        (thumb_distance <= threshold).int(),
         torch.tensor(0, device=thumb_distance.device)  # If thumb fails, confidence = 0
         )
 

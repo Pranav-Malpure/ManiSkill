@@ -183,8 +183,8 @@ class PickCubeEnv(BaseEnv):
         return reward
     
     def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
-        cube_position_z_offseted = self.cube.pose.p
-        cube_position_z_offseted[:, 2] += 0.015
+        cube_position_z_offseted = self.cube.pose.p.clone()
+        cube_position_z_offseted[:, 2] += 0.03
         tcp_to_obj_dist = torch.linalg.norm(
             cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
@@ -198,7 +198,8 @@ class PickCubeEnv(BaseEnv):
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
         place_reward = 1 - torch.tanh(5 * obj_to_goal_dist)
-        reward += place_reward * is_grasped
+        if is_grasped >= 0.5:
+            reward += place_reward
 
         qvel_without_gripper = self.agent.robot.get_qvel()
         if self.robot_uids == "xarm6_robotiq":
@@ -216,12 +217,14 @@ class PickCubeEnv(BaseEnv):
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,2])
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
-            
+        
+        # the below reward encourages pressing the cube with the gripper
         mask = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 0]))
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
         reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
+        
         reward[info["success"]] = 5
 
         joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
@@ -229,8 +232,8 @@ class PickCubeEnv(BaseEnv):
         # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
         reward += 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
 
-        joint_6_pos = joint_pos[..., 5]
-        reward += (1 - torch.tanh(torch.abs(8*joint_6_pos)-2))/4 # to encourage the wrist to be close to 0
+        # joint_6_pos = joint_pos[..., 5]
+        # reward += (1 - torch.tanh(torch.abs(8*joint_6_pos)-2))/4 # to encourage the wrist to be close to 0
 
 
         return reward
