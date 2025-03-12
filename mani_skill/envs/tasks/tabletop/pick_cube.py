@@ -42,7 +42,7 @@ class PickCubeEnv(BaseEnv):
         "xarm6_pandagripper"
     ]
     agent: Union[Panda, Fetch, XArm6Robotiq, XArm6AllegroLeft, XArm6AllegroRight, FloatingRobotiq2F85Gripper, XArm6PandaGripper]
-    cube_half_size = 0.03
+    cube_half_size = 0.05
     goal_thresh = 0.025
 
     def __init__(self, *args, robot_uids="xarm6_allegro_right", robot_init_qpos_noise=0.02, **kwargs):
@@ -184,7 +184,7 @@ class PickCubeEnv(BaseEnv):
     
     def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
         cube_position_z_offseted = self.cube.pose.p.clone()
-        cube_position_z_offseted[:, 2] += 0.03
+        cube_position_z_offseted[:, 2] += self.cube_half_size+0.01
         tcp_to_obj_dist = torch.linalg.norm(
             cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
@@ -198,9 +198,9 @@ class PickCubeEnv(BaseEnv):
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
         place_reward = 1 - torch.tanh(5 * obj_to_goal_dist)
-        if is_grasped >= 0.5:
-            reward += place_reward
-
+        # if is_grasped >= 0.5:
+        #     reward += place_reward
+        reward += torch.where(is_grasped >=0.5, place_reward, torch.zeros_like(place_reward))
         qvel_without_gripper = self.agent.robot.get_qvel()
         if self.robot_uids == "xarm6_robotiq":
             qvel_without_gripper = qvel_without_gripper[..., :-6]
