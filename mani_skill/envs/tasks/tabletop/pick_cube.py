@@ -200,6 +200,7 @@ class PickCubeEnv(BaseEnv):
         place_reward = 1 - torch.tanh(5 * obj_to_goal_dist)
         # if is_grasped >= 0.5:
         #     reward += place_reward
+        torch.where(is_grasped>=1, print("grasped!!", is_grasped), 0)
         reward += torch.where(is_grasped >=1, place_reward, torch.zeros_like(place_reward))
         qvel_without_gripper = self.agent.robot.get_qvel()
         if self.robot_uids == "xarm6_robotiq":

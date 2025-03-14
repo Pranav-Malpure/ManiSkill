@@ -453,7 +453,8 @@ class XArm6AllegroRight(BaseAgent):
 
 
         confidence = 0
-        threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
+        # threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
+        threshold = cube_half_size *np.sqrt(1.25)+ 0.013  # Single scalar
         # confidence = (
         # (thumb_distance <= threshold).int() +
         # (finger1_distance <= threshold).int() +
