@@ -387,7 +387,7 @@ class XArm6AllegroRight(BaseAgent):
         self.tcp = self.palm_link
 
 
-    def is_grasping(self, object: Actor, min_force=0.5, max_angle=85):
+    def is_grasping(self, cube_half_size, object: Actor, min_force=0.5, max_angle=85):
         thumb_contact_forces = self.scene.get_pairwise_contact_forces(
             self.tip_links[0], object
         )
