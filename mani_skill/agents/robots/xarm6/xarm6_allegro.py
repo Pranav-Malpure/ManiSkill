@@ -387,90 +387,105 @@ class XArm6AllegroRight(BaseAgent):
         self.tcp = self.palm_link
 
 
-    # def is_grasping(self, object: Actor, min_force=0.5, max_angle=85):
-    #     thumb_contact_forces = self.scene.get_pairwise_contact_forces(
-    #         self.tip_links[0], object
-    #     )
-    #     finger1_contact_forces = self.scene.get_pairwise_contact_forces(
-    #         self.tip_links[1], object
-    #     )
-    #     finger2_contact_forces = self.scene.get_pairwise_contact_forces(
-    #         self.tip_links[2], object
-    #     )
-    #     finger3_contact_forces = self.scene.get_pairwise_contact_forces(
-    #         self.tip_links[3], object
-    #     )
-
-    #     thumb_force = torch.linalg.norm(thumb_contact_forces, axis=1)
-    #     finger1_force = torch.linalg.norm(finger1_contact_forces, axis=1)
-    #     finger2_force = torch.linalg.norm(finger2_contact_forces, axis=1)
-    #     finger3_force = torch.linalg.norm(finger3_contact_forces, axis=1)
-
-    #     thumb_direction = self.tip_links[0].pose.to_transformation_matrix()[..., :3, 1]
-    #     finger1_direction = self.tip_links[1].pose.to_transformation_matrix()[..., :3, 1]
-    #     finger2_direction = self.tip_links[2].pose.to_transformation_matrix()[..., :3, 1]
-    #     finger3_direction = self.tip_links[3].pose.to_transformation_matrix()[..., :3, 1]
-        
-    #     thumb_angle = common.compute_angle_between(thumb_direction, thumb_contact_forces)
-    #     finger1_angle = common.compute_angle_between(finger1_direction, finger1_contact_forces)
-    #     finger2_angle = common.compute_angle_between(finger2_direction, finger2_contact_forces)
-    #     finger3_angle = common.compute_angle_between(finger3_direction, finger3_contact_forces)
-
-    #     thumb_flag = torch.logical_and(
-    #         thumb_force >= min_force, torch.rad2deg(thumb_angle) <= max_angle
-    #     )
-    #     finger1_flag = torch.logical_and(
-    #         finger1_force >= min_force, torch.rad2deg(finger1_angle) <= max_angle
-    #     )
-    #     finger2_flag = torch.logical_and(
-    #         finger2_force >= min_force, torch.rad2deg(finger2_angle) <= max_angle
-    #     )
-    #     finger3_flag = torch.logical_and(
-    #         finger3_force >= min_force, torch.rad2deg(finger3_angle) <= max_angle
-    #     )
-    #     return torch.logical_and(thumb_flag, torch.logical_and(finger1_flag, torch.logical_and(finger2_flag, finger3_flag)))
-    
-    def is_grasping(self, cube_half_size, object: Actor, min_force=0.5, max_angle=85):
-        """Check if the cube is grasping the object without using force sensors
-        """
-
-        # thumb_direction = self.tip_links[0].pose.to_transformation_matrix()[..., :3, 1]
-        # finger1_direction = self.tip_links[1].pose.to_transformation_matrix()[..., :3, 1]
-        # finger2_direction = self.tip_links[2].pose.to_transformation_matrix()[..., :3, 1]
-        # finger3_direction = self.tip_links[3].pose.to_transformation_matrix()[..., :3, 1]
-        
-        thumb_position = self.tip_links[0].pose.p
-        finger1_position = self.tip_links[1].pose.p
-        finger2_position = self.tip_links[2].pose.p
-        finger3_position = self.tip_links[3].pose.p
-
-        object_position = object.pose.p
-
-        thumb_distance = torch.linalg.norm(thumb_position - object_position, axis=1)
-        finger1_distance = torch.linalg.norm(finger1_position - object_position, axis=1)
-        finger2_distance = torch.linalg.norm(finger2_position - object_position, axis=1)
-        finger3_distance = torch.linalg.norm(finger3_position - object_position, axis=1)
-
-
-        confidence = 0
-        # threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
-        threshold = cube_half_size *np.sqrt(1.25)+ 0.013  # Single scalar
-        # confidence = (
-        # (thumb_distance <= threshold).int() +
-        # (finger1_distance <= threshold).int() +
-        # (finger2_distance <= threshold).int() +
-        # (finger3_distance <= threshold).int())
-
-        confidence = torch.where(
-        thumb_distance <= threshold,  # Condition: Thumb must be within threshold
-        (finger1_distance <= threshold).int() +
-        (finger2_distance <= threshold).int() +
-        (finger3_distance <= threshold).int() +
-        (thumb_distance <= threshold).int(),
-        torch.tensor(0, device=thumb_distance.device)  # If thumb fails, confidence = 0
+    def is_grasping(self, object: Actor, min_force=0.5, max_angle=85):
+        thumb_contact_forces = self.scene.get_pairwise_contact_forces(
+            self.tip_links[0], object
+        )
+        finger1_contact_forces = self.scene.get_pairwise_contact_forces(
+            self.tip_links[1], object
+        )
+        finger2_contact_forces = self.scene.get_pairwise_contact_forces(
+            self.tip_links[2], object
+        )
+        finger3_contact_forces = self.scene.get_pairwise_contact_forces(
+            self.tip_links[3], object
         )
 
+        thumb_force = torch.linalg.norm(thumb_contact_forces, axis=1)
+        finger1_force = torch.linalg.norm(finger1_contact_forces, axis=1)
+        finger2_force = torch.linalg.norm(finger2_contact_forces, axis=1)
+        finger3_force = torch.linalg.norm(finger3_contact_forces, axis=1)
+
+        thumb_direction = self.tip_links[0].pose.to_transformation_matrix()[..., :3, 0] # its the x axis which is pointing outwards, checked on urdf visualizer
+        finger1_direction = self.tip_links[1].pose.to_transformation_matrix()[..., :3, 0]
+        finger2_direction = self.tip_links[2].pose.to_transformation_matrix()[..., :3, 0]
+        finger3_direction = self.tip_links[3].pose.to_transformation_matrix()[..., :3, 0]
+        
+        thumb_angle = common.compute_angle_between(thumb_direction, thumb_contact_forces)
+        finger1_angle = common.compute_angle_between(finger1_direction, finger1_contact_forces)
+        finger2_angle = common.compute_angle_between(finger2_direction, finger2_contact_forces)
+        finger3_angle = common.compute_angle_between(finger3_direction, finger3_contact_forces)
+
+        thumb_flag = torch.logical_and(
+            thumb_force >= min_force, torch.abs(torch.cos(thumb_angle)) <= torch.cos(max_angle)
+        )
+        finger1_flag = torch.logical_and(
+            finger1_force >= min_force, torch.abs(torch.cos(finger1_angle)) <= torch.cos(max_angle)
+        )
+        finger2_flag = torch.logical_and(
+            finger2_force >= min_force, torch.abs(torch.cos(finger2_angle)) <= torch.cos(max_angle)
+        )
+        finger3_flag = torch.logical_and(
+            finger3_force >= min_force, torch.abs(torch.cos(finger3_angle)) <= torch.cos(max_angle)
+        )
+
+        # thumb_flag = torch.logical_and(
+        #     thumb_force >= min_force, torch.rad2deg(thumb_angle) <= max_angle
+        # )
+        # finger1_flag = torch.logical_and(
+        #     finger1_force >= min_force, torch.rad2deg(finger1_angle) <= max_angle
+        # )
+        # finger2_flag = torch.logical_and(
+        #     finger2_force >= min_force, torch.rad2deg(finger2_angle) <= max_angle
+        # )
+        # finger3_flag = torch.logical_and(
+        #     finger3_force >= min_force, torch.rad2deg(finger3_angle) <= max_angle
+        # )
+        confidence = torch.where(thumb_flag, (thumb_flag).int() + (finger1_flag).int() + (finger2_flag).int() + (finger3_flag).int(), torch.tensor(0, device=thumb_force.device))
         return confidence
+        # return torch.logical_and(thumb_flag, torch.logical_and(finger1_flag, torch.logical_and(finger2_flag, finger3_flag)))
+    
+    # def is_grasping(self, cube_half_size, object: Actor, min_force=0.5, max_angle=85):
+    #     """Check if the cube is grasping the object without using force sensors
+    #     """
+
+    #     # thumb_direction = self.tip_links[0].pose.to_transformation_matrix()[..., :3, 1]
+    #     # finger1_direction = self.tip_links[1].pose.to_transformation_matrix()[..., :3, 1]
+    #     # finger2_direction = self.tip_links[2].pose.to_transformation_matrix()[..., :3, 1]
+    #     # finger3_direction = self.tip_links[3].pose.to_transformation_matrix()[..., :3, 1]
+        
+    #     thumb_position = self.tip_links[0].pose.p
+    #     finger1_position = self.tip_links[1].pose.p
+    #     finger2_position = self.tip_links[2].pose.p
+    #     finger3_position = self.tip_links[3].pose.p
+
+    #     object_position = object.pose.p
+
+    #     thumb_distance = torch.linalg.norm(thumb_position - object_position, axis=1)
+    #     finger1_distance = torch.linalg.norm(finger1_position - object_position, axis=1)
+    #     finger2_distance = torch.linalg.norm(finger2_position - object_position, axis=1)
+    #     finger3_distance = torch.linalg.norm(finger3_position - object_position, axis=1)
+
+
+    #     confidence = 0
+    #     # threshold = cube_half_size * np.sqrt(2) + 0.016  # Single scalar
+    #     threshold = cube_half_size *np.sqrt(1.25)+ 0.013  # Single scalar
+    #     # confidence = (
+    #     # (thumb_distance <= threshold).int() +
+    #     # (finger1_distance <= threshold).int() +
+    #     # (finger2_distance <= threshold).int() +
+    #     # (finger3_distance <= threshold).int())
+
+    #     confidence = torch.where(
+    #     thumb_distance <= threshold,  # Condition: Thumb must be within threshold
+    #     (finger1_distance <= threshold).int() +
+    #     (finger2_distance <= threshold).int() +
+    #     (finger3_distance <= threshold).int() +
+    #     (thumb_distance <= threshold).int(),
+    #     torch.tensor(0, device=thumb_distance.device)  # If thumb fails, confidence = 0
+    #     )
+
+    #     return confidence
     
     def object_reward(self, object: Actor, min_force=0.5, max_angle=85):
         thumb_position = self.tip_links[0].pose.p
