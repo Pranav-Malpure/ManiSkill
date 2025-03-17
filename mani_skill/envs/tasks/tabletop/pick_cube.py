@@ -253,18 +253,18 @@ class PickCubeEnv(BaseEnv):
             cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
         reaching_reward = 1 + 1 - torch.tanh(5 * tcp_to_obj_dist)
-        reward = reaching_reward*mask_joint_pos.float()
+        reward[mask_joint_pos] = reaching_reward[mask_joint_pos]
 
         mask_reached = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
         object_grabbing_closeness = self.agent.object_reward(self.cube)
         
-        reward = mask_reached * (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))
+        reward[mask_reached] = (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))[mask_reached]
         mask_thumb_close = object_grabbing_closeness[..., 1] < self.cube_half_size * np.sqrt(1.25)+ 0.013 
         finger1_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
         finger2_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
         finger3_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
 
-        reward = mask_thumb_close*(3 + (finger1_reward + finger2_reward + finger3_reward))
+        reward[mask_thumb_close] = (3 + (finger1_reward + finger2_reward + finger3_reward))[mask_thumb_close]
         
         is_grasped = info["is_grasped"]/2
         mask_grasp = is_grasped >= 1
@@ -274,7 +274,7 @@ class PickCubeEnv(BaseEnv):
         )
         place_reward = 2*(1 - torch.tanh(1.2 * obj_to_goal_dist))
         
-        reward = mask_grasp*(6 + place_reward)
+        reward[mask_grasp] = (6 + place_reward)[mask_grasp]
 
 
         qvel_without_gripper = self.agent.robot.get_qvel()
@@ -286,7 +286,7 @@ class PickCubeEnv(BaseEnv):
             5 * torch.linalg.norm(qvel_without_gripper, axis=1)
         )
 
-        reward = (static_reward + 8) * info["is_obj_placed"]
+        reward[info["is_obj_placed"]] = (static_reward + 8)[info["is_obj_placed"]]
 
         # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
