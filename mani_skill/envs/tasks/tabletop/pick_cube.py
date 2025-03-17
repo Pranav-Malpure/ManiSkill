@@ -125,6 +125,7 @@ class PickCubeEnv(BaseEnv):
         # is_grasped = self.agent.is_grasping(self.cube)
         is_grasped = self.agent.is_grasping(self.cube_half_size, self.cube)
         is_robot_static = self.agent.is_static(0.2) # threshold is 0.2 here
+
         return {
             "success": is_obj_placed & is_robot_static,
             "is_obj_placed": is_obj_placed,
@@ -252,7 +253,7 @@ class PickCubeEnv(BaseEnv):
             cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
         reaching_reward = 1 + 1 - torch.tanh(5 * tcp_to_obj_dist)
-        reward = reaching_reward*mask_joint_pos
+        reward = reaching_reward*mask_joint_pos.float()
 
         mask_reached = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
         object_grabbing_closeness = self.agent.object_reward(self.cube)
@@ -296,7 +297,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward = [info["success"]]*(9+5)
+        reward[info["success"]] = (9+5)
 
 
         return reward
@@ -304,7 +305,7 @@ class PickCubeEnv(BaseEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        return self.compute_modified_reward(obs=obs, action=action, info=info) / 5
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
