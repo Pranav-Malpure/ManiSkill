@@ -416,6 +416,11 @@ class XArm6AllegroRight(BaseAgent):
         finger2_angle = common.compute_angle_between(finger2_direction, finger2_contact_forces)
         finger3_angle = common.compute_angle_between(finger3_direction, finger3_contact_forces)
 
+        # compute dot product between thumb_contact_forces and finger_contact_forces #TODO
+        # thumb_flag = torch.logical_and(
+        #     thumb_force >= min_force, torch.logical_and(torch.abs(torch.cos(thumb_angle)) <= torch.cos(torch.tensor(max_angle, dtype=torch.float)), )
+        # )
+
         thumb_flag = torch.logical_and(
             thumb_force >= min_force, torch.abs(torch.cos(thumb_angle)) <= torch.cos(torch.tensor(max_angle, dtype=torch.float))
         )

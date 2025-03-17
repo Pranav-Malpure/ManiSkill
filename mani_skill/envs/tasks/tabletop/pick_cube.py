@@ -182,25 +182,100 @@ class PickCubeEnv(BaseEnv):
         reward[info["success"]] = 5
         return reward
     
+    # def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
+    #     cube_position_z_offseted = self.cube.pose.p.clone()
+    #     cube_position_z_offseted[:, 2] += self.cube_half_size+0.01
+    #     tcp_to_obj_dist = torch.linalg.norm(
+    #         cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
+    #     )
+    #     reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
+    #     reward = reaching_reward
+
+    #     is_grasped = info["is_grasped"]/2
+    #     reward += is_grasped
+
+    #     obj_to_goal_dist = torch.linalg.norm(
+    #         self.goal_site.pose.p - self.cube.pose.p, axis=1
+    #     )
+    #     place_reward = 2*(1 - torch.tanh(1.2 * obj_to_goal_dist))
+    #     # if is_grasped >= 0.5:
+    #     #     reward += place_reward
+    #     reward += torch.where(is_grasped >=1, place_reward, torch.zeros_like(place_reward))
+    #     qvel_without_gripper = self.agent.robot.get_qvel()
+    #     if self.robot_uids == "xarm6_robotiq":
+    #         qvel_without_gripper = qvel_without_gripper[..., :-6]
+    #     elif self.robot_uids == "panda":
+    #         qvel_without_gripper = qvel_without_gripper[..., :-2]
+    #     static_reward = 1 - torch.tanh(
+    #         5 * torch.linalg.norm(qvel_without_gripper, axis=1)
+    #     )
+    #     reward += static_reward * info["is_obj_placed"]
+
+    #     object_grabbing_closeness = self.agent.object_reward(self.cube)
+    #     # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
+    #     #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
+    #     #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
+    #     #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,2])
+    #     #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
+        
+    #     # the below reward encourages pressing the cube with the gripper
+    #     mask = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
+    #     reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 0]))
+    #     reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
+    #     reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
+    #     reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
+        
+    #     reward[info["success"]] = 5
+
+    #     joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
+    #     joint_5_pos = joint_pos[..., 4]
+    #     # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
+    #     reward += 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
+
+    #     # joint_6_pos = joint_pos[..., 5]
+    #     # reward += (1 - torch.tanh(torch.abs(8*joint_6_pos)-2))/4 # to encourage the wrist to be close to 0
+
+
+    #     return reward
+
     def compute_modified_reward(self, obs: Any, action: torch.Tensor, info: Dict): # New reward designed for pickcube without grasping info
+
+        joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
+        joint_5_pos = joint_pos[..., 4]
+        # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
+        reward = 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
+        
+        mask_joint_pos = joint_pos[..., 4] < -1.25
         cube_position_z_offseted = self.cube.pose.p.clone()
         cube_position_z_offseted[:, 2] += self.cube_half_size+0.01
         tcp_to_obj_dist = torch.linalg.norm(
             cube_position_z_offseted - self.agent.tcp.pose.p, axis=1
         )
-        reaching_reward = 1 - torch.tanh(5 * tcp_to_obj_dist)
-        reward = reaching_reward
+        reaching_reward = 1 + 1 - torch.tanh(5 * tcp_to_obj_dist)
+        reward = reaching_reward*mask_joint_pos
 
+        mask_reached = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
+        object_grabbing_closeness = self.agent.object_reward(self.cube)
+        
+        reward = mask_reached * (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))
+        mask_thumb_close = object_grabbing_closeness[..., 1] < self.cube_half_size * np.sqrt(1.25)+ 0.013 
+        finger1_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
+        finger2_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
+        finger3_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
+
+        reward = mask_thumb_close*(3 + (finger1_reward + finger2_reward + finger3_reward))
+        
         is_grasped = info["is_grasped"]/2
-        reward += is_grasped
-
+        mask_grasp = is_grasped >= 1
+        
         obj_to_goal_dist = torch.linalg.norm(
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
-        place_reward = 1 - torch.tanh(5 * obj_to_goal_dist)
-        # if is_grasped >= 0.5:
-        #     reward += place_reward
-        reward += torch.where(is_grasped >=1, place_reward, torch.zeros_like(place_reward))
+        place_reward = 2*(1 - torch.tanh(1.2 * obj_to_goal_dist))
+        
+        reward = mask_grasp*(6 + place_reward)
+
+
         qvel_without_gripper = self.agent.robot.get_qvel()
         if self.robot_uids == "xarm6_robotiq":
             qvel_without_gripper = qvel_without_gripper[..., :-6]
@@ -209,9 +284,9 @@ class PickCubeEnv(BaseEnv):
         static_reward = 1 - torch.tanh(
             5 * torch.linalg.norm(qvel_without_gripper, axis=1)
         )
-        reward += static_reward * info["is_obj_placed"]
 
-        object_grabbing_closeness = self.agent.object_reward(self.cube)
+        reward = (static_reward + 8) * info["is_obj_placed"]
+
         # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,1])
@@ -219,21 +294,9 @@ class PickCubeEnv(BaseEnv):
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,3])
         
         # the below reward encourages pressing the cube with the gripper
-        mask = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
-        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 0]))
-        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
-        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
-        reward += mask * (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
         
-        reward[info["success"]] = 5
-
-        joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
-        joint_5_pos = joint_pos[..., 4]
-        # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
-        reward += 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
-
-        # joint_6_pos = joint_pos[..., 5]
-        # reward += (1 - torch.tanh(torch.abs(8*joint_6_pos)-2))/4 # to encourage the wrist to be close to 0
+                
+        reward = [info["success"]]*(9+5)
 
 
         return reward
