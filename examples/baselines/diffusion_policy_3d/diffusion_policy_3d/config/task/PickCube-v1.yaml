@@ -26,7 +26,7 @@ env_runner:
   control_mode: pd_ee_delta_pose
   task_name: ${task_name}
   num_eval_envs: 1
-  sim_backend: cpu
+  sim_backend: gpu
   device: ${training.device}
   use_point_crop: ${policy.use_point_crop}
   use_pc_color: ${policy.use_pc_color}

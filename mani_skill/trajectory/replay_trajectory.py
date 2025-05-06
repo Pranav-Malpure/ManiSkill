@@ -264,7 +264,8 @@ def replay_cpu_sim(
 
         reset_kwargs = episode["reset_kwargs"].copy()
         if "seed" in reset_kwargs:
-            assert reset_kwargs["seed"] == episode["episode_seed"][0]
+            # assert reset_kwargs["seed"] == episode["episode_seed"][0]
+            assert reset_kwargs["seed"] == (episode["episode_seed"][0] if isinstance(episode["episode_seed"], (list, tuple, np.ndarray)) else episode["episode_seed"])
         else:
             reset_kwargs["seed"] = episode["episode_seed"][0]
         seed = reset_kwargs.pop("seed")

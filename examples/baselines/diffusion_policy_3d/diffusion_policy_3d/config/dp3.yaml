@@ -17,7 +17,7 @@ obs_as_global_cond: True
 
 policy:
   _target_: diffusion_policy_3d.policy.dp3.DP3
-  use_point_crop: true
+  use_point_crop: false
   condition_type: film
   use_down_condition: true
   use_mid_condition: true
@@ -54,7 +54,7 @@ policy:
   obs_as_global_cond: true
   shape_meta: ${shape_meta}
 
-  use_pc_color: true
+  use_pc_color: false
   pointnet_type: "pointnet"
 
 
