@@ -5,13 +5,13 @@ task_name: ${name}
 shape_meta: &shape_meta
   obs:
     point_cloud:
-      shape: [1024, 3]
+      shape: [512, 3]
       type: point_cloud
     agent_pos:
-      shape: [29]
+      shape: [19]
       type: low_dimx
   action:
-    shape: [7]
+    shape: [8]
 
 env_runner:
   _target_: diffusion_policy_3d.env_runner.maniskill_runner.ManiSkillRunner
@@ -23,7 +23,7 @@ env_runner:
   n_envs: null
   n_train: null
   n_test: null
-  control_mode: pd_ee_delta_pose
+  control_mode: pd_joint_pos
   task_name: ${task_name}
   num_eval_envs: 1
   sim_backend: gpu

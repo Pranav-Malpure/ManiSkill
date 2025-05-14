@@ -43,7 +43,7 @@ def main(args):
 
     assert len(trajectories['observations']) == num_demos
     assert len(trajectories['actions']) == num_demos
-
+    print(trajectories['actions'].shape)
     total_count = 0 # total number of elapsed steps
     img_arrays = []
     point_cloud_arrays = []
@@ -122,7 +122,7 @@ def main(args):
             }
             from mani_skill.utils import common
             obs_robot_state = common.flatten_state_dict(
-                observation_idx, use_torch=False, device='cuda:0'
+                observation_idx, use_torch=True, device='cpu'
             )
 
             # agent_pos = trajectories['observations'][demo_idx]['agent']['qpos'][episode_idx] # agent_pos[joint_pos, ee_1_p, ee_2_p]: [9]

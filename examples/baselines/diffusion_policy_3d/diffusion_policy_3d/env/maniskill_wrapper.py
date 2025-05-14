@@ -68,12 +68,15 @@ class ManiSkillEnv(gym.Wrapper):
     def get_point_cloud(self, raw_obs, use_point_crop=True, use_rgb=True):
 
         xyzw = raw_obs['pointcloud']
-        filtered_xyzw = xyzw[xyzw[:, -1] == 1] # filter invalid pointcloud, e.g., too far away
+        xyzw = xyzw.squeeze(1)
+        mask = xyzw[...,-1] == 1
+        filtered_xyzw = xyzw[mask] # filter invalid pointcloud, e.g., too far away
         point_cloud = filtered_xyzw[...,:3]
 
         if use_rgb:
             rgb = raw_obs['rgb']
-            filtered_rgb = rgb[xyzw[:, -1] == 1]
+            rgb = rgb.squeeze(1)
+            filtered_rgb = rgb[mask]
             point_cloud = np.concatenate((point_cloud, filtered_rgb), axis=1)
 
         # if self.pc_transform is not None:

@@ -232,10 +232,12 @@ class ManiSkillRunner(BaseRunner):
             is_success = False
             while not done:
                 np_obs_dict = dict(obs)
+                # obs_dict = dict_apply(np_obs_dict,
+                                    #   lambda x: torch.from_numpy(x).to(
+                                    #       device=device)) # TypeError: expected np.ndarray (got list)
                 obs_dict = dict_apply(np_obs_dict,
-                                      lambda x: torch.from_numpy(x).to(
-                                          device=device)) # TypeError: expected np.ndarray (got list)
-
+                                    lambda x: torch.from_numpy(x).to(device) if isinstance(x, np.ndarray) else x.to(device))
+                        
                 with torch.no_grad():
                     obs_dict_input = {}
                     obs_dict_input['point_cloud'] = obs_dict['point_cloud'].unsqueeze(0)
