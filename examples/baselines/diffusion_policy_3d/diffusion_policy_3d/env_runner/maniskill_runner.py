@@ -225,12 +225,15 @@ class ManiSkillRunner(BaseRunner):
 
             # start rollout
             obs, _ = env.reset(seed=0)
+            print("FROM RUNNER: ", obs['point_cloud'].shape, obs['agent_pos'].shape)
             policy.reset()
 
             done = False
             traj_reward = 0
             is_success = False
             while not done:
+                print("iteration....")
+                print()
                 np_obs_dict = dict(obs)
                 # obs_dict = dict_apply(np_obs_dict,
                                     #   lambda x: torch.from_numpy(x).to(
@@ -242,6 +245,7 @@ class ManiSkillRunner(BaseRunner):
                     obs_dict_input = {}
                     obs_dict_input['point_cloud'] = obs_dict['point_cloud'].unsqueeze(0)
                     obs_dict_input['agent_pos'] = obs_dict['agent_pos'].unsqueeze(0)
+                    # print("FROM RUNNER-2: ", obs_dict_input['point_cloud'].shape, obs_dict_input['agent_pos'].shape)
                     action_dict = policy.predict_action(obs_dict_input)
 
                 np_action_dict = dict_apply(action_dict,
@@ -251,7 +255,8 @@ class ManiSkillRunner(BaseRunner):
                 obs, reward, done, _, info = env.step(action)
 
                 traj_reward += reward
-                done = np.all(done)
+                # done = np.all(done)
+                done = done.item() if isinstance(done, torch.Tensor) else bool(np.all(done))
                 is_success = is_success or max(info['success'])
 
             all_success_rates.append(is_success)

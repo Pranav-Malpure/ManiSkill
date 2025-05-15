@@ -181,6 +181,7 @@ class DP3(BasePolicy):
         """
         # normalize input
         nobs = self.normalizer.normalize(obs_dict)
+        # print("nobs shape at the start of predictaction:", nobs['point_cloud'].shape)
         # this_n_point_cloud = nobs['imagin_robot'][..., :3] # only use coordinate
         if not self.use_pc_color:
             nobs['point_cloud'] = nobs['point_cloud'][..., :3]
@@ -193,7 +194,8 @@ class DP3(BasePolicy):
         Da = self.action_dim
         Do = self.obs_feature_dim
         To = self.n_obs_steps
-
+        # print("To is: ", To)
+        print()
         # build input
         device = self.device
         dtype = self.dtype
@@ -203,7 +205,12 @@ class DP3(BasePolicy):
         global_cond = None
         if self.obs_as_global_cond:
             # condition through global feature
+            # print("FROM DP3 before apply:", nobs['point_cloud'].shape)
             this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
+            # print("FROM DP3.py:",this_nobs['point_cloud'].shape)
+            # print("agent pos shape", this_nobs['agent_pos'].shape)
+            # print("pointcloudshape", this_nobs['point_cloud'].shape)
+            this_nobs['agent_pos'] = this_nobs['agent_pos'].squeeze(1)
             nobs_features = self.obs_encoder(this_nobs)
             if "cross_attention" in self.condition_type:
                 # treat as a sequence

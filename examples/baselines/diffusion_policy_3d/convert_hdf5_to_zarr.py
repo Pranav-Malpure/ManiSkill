@@ -43,7 +43,7 @@ def main(args):
 
     assert len(trajectories['observations']) == num_demos
     assert len(trajectories['actions']) == num_demos
-    print(trajectories['actions'].shape)
+    # print(trajectories['actions'].shape)
     total_count = 0 # total number of elapsed steps
     img_arrays = []
     point_cloud_arrays = []
@@ -113,8 +113,8 @@ def main(args):
             }
             extra_idx = {
                 'is_grasped': observation['extra']['is_grasped'][episode_idx],
-                'tcp_pose': observation['extra']['tcp_pose'][episode_idx],
-                'goal_pose': observation['extra']['goal_pos'][episode_idx],
+                # 'tcp_pose': observation['extra']['tcp_pose'][episode_idx],
+                # 'goal_pose': observation['extra']['goal_pos'][episode_idx],
             }
             observation_idx = {
                 'agent': agent_idx,

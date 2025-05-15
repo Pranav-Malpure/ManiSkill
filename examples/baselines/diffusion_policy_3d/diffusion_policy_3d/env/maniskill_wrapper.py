@@ -66,18 +66,31 @@ class ManiSkillEnv(gym.Wrapper):
         return self.env.unwrapped
 
     def get_point_cloud(self, raw_obs, use_point_crop=True, use_rgb=True):
-
+        import torch
         xyzw = raw_obs['pointcloud']
-        xyzw = xyzw.squeeze(1)
-        mask = xyzw[...,-1] == 1
-        filtered_xyzw = xyzw[mask] # filter invalid pointcloud, e.g., too far away
-        point_cloud = filtered_xyzw[...,:3]
+        # print()
+        # print("FROM wrapper maniskill",xyzw.shape)
+        # xyzw = xyzw.squeeze(1)
+        xyzw = xyzw.permute(1,0,2,3)
+        # print("after permute..",xyzw.shape)
 
+        # Compute mask: True where valid (i.e., last dim == 1)
+        mask = xyzw[..., -1] == 1  # Shape: [1,2, 16384]
+        # Broadcast mask to 4th dimension
+        mask = mask.unsqueeze(-1)  # Shape: [1,2, 16384, 1]
+        # Replace invalid points with a small value (e.g., 1e-8)
+        # print("XYZW shape", xyzw.shape)
+        xyzw = torch.where(mask, xyzw, torch.full_like(xyzw, 1e-8))
+        # Now you can safely extract point cloud (x, y, z only)
+        point_cloud = xyzw[..., :3]  # Shape preserved: [1,2, 16384, 3]
+        # print("finally point_cloud shape",point_cloud.shape)
         if use_rgb:
             rgb = raw_obs['rgb']
-            rgb = rgb.squeeze(1)
-            filtered_rgb = rgb[mask]
-            point_cloud = np.concatenate((point_cloud, filtered_rgb), axis=1)
+            # rgb = rgb.squeeze(1)
+            rgb = rgb.permute(1,0,2,3)
+            # print("rgb shape", rgb.shape)
+            filtered_rgb = torch.where(mask, rgb, torch.full_like(rgb, 1e-8))
+            point_cloud = np.concatenate((point_cloud, filtered_rgb), axis=-1)
 
         # if self.pc_transform is not None:
         #     point_cloud[:, :3] = point_cloud[:, :3] @ self.pc_transform.T
@@ -100,7 +113,11 @@ class ManiSkillEnv(gym.Wrapper):
         if point_cloud.shape[0] > self.num_points:
             point_cloud = downsample_with_fps(point_cloud, num_points=self.num_points)
 
-        return point_cloud
+        print("ultimate point_cloud", point_cloud.shape)
+        if point_cloud.shape[0] != 1:
+            print("ERRRRORROROOROROR")
+            exit()
+        return point_cloud.squeeze(0)
         # return np.stack(point_cloud, axis=0) # convert to ndarray
 
     def step(self, action):
@@ -129,6 +146,7 @@ class ManiSkillEnv(gym.Wrapper):
         self.cur_step = 0
 
         robot_state = raw_obs["state"]
+        print("robot_state.shape", robot_state.shape)
         point_cloud = self.get_point_cloud(raw_obs, use_point_crop=self.use_point_crop, use_rgb=self.use_pc_color)
 
         obs_dict = {
