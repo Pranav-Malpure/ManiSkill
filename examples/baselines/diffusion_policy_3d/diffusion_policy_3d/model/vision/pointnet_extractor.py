@@ -273,7 +273,7 @@ class DP3Encoder(nn.Module):
             
         state = observations[self.state_key]
         state_feat = self.state_mlp(state)  # B * 64
-        print("final_feat shapes", pn_feat.shape, state_feat.shape)
+        # print("final_feat shapes", pn_feat.shape, state_feat.shape)
         final_feat = torch.cat([pn_feat, state_feat], dim=-1)
         return final_feat
 

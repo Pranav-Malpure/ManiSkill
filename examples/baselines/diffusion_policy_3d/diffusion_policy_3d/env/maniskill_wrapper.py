@@ -113,7 +113,7 @@ class ManiSkillEnv(gym.Wrapper):
         if point_cloud.shape[0] > self.num_points:
             point_cloud = downsample_with_fps(point_cloud, num_points=self.num_points)
 
-        print("ultimate point_cloud", point_cloud.shape)
+        # print("ultimate point_cloud", point_cloud.shape)
         if point_cloud.shape[0] != 1:
             print("ERRRRORROROOROROR")
             exit()

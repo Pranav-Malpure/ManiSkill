@@ -225,15 +225,13 @@ class ManiSkillRunner(BaseRunner):
 
             # start rollout
             obs, _ = env.reset(seed=0)
-            print("FROM RUNNER: ", obs['point_cloud'].shape, obs['agent_pos'].shape)
+            # print("FROM RUNNER: ", obs['point_cloud'].shape, obs['agent_pos'].shape)
             policy.reset()
 
             done = False
             traj_reward = 0
             is_success = False
             while not done:
-                print("iteration....")
-                print()
                 np_obs_dict = dict(obs)
                 # obs_dict = dict_apply(np_obs_dict,
                                     #   lambda x: torch.from_numpy(x).to(

@@ -25,7 +25,7 @@ env_runner:
   n_test: null
   control_mode: pd_joint_pos
   task_name: ${task_name}
-  num_eval_envs: 1
+  num_eval_envs: 2
   sim_backend: gpu
   device: ${training.device}
   use_point_crop: ${policy.use_point_crop}

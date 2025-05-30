@@ -50,12 +50,11 @@ def dict_take_last_n(x, n):
 
 
 def aggregate(data, method='max'):
+    # If all elements are torch.Tensor
     if isinstance(data[0], torch.Tensor):
         if method == 'max':
-            # equivalent to any
             return torch.max(torch.stack(data))
         elif method == 'min':
-            # equivalent to all
             return torch.min(torch.stack(data))
         elif method == 'mean':
             return torch.mean(torch.stack(data))
@@ -64,11 +63,11 @@ def aggregate(data, method='max'):
         else:
             raise NotImplementedError()
     else:
+        # Convert to numpy array if not already
+        data = np.array(data)
         if method == 'max':
-            # equivalent to any
             return np.max(data)
         elif method == 'min':
-            # equivalent to all
             return np.min(data)
         elif method == 'mean':
             return np.mean(data)
@@ -101,6 +100,15 @@ def stack_last_n_obs(all_obs, n_steps):
     else:
         raise RuntimeError(f'Unsupported obs type {type(all_obs[0])}')
     return result
+
+
+def to_1d_tensor(x, device=None):
+    t = torch.as_tensor(x, device=device)
+    if t.ndim == 0:
+        t = t.unsqueeze(0)
+    elif t.ndim > 1:
+        t = t.flatten()
+    return t
 
 
 class MultiStepWrapper(gym.ObservationWrapper):
@@ -153,13 +161,34 @@ class MultiStepWrapper(gym.ObservationWrapper):
                     and (len(self.reward) >= self.max_episode_steps):
                 # termination
                 done = True
-            self.done.append(done)
+
+            # Determine the device to use for all done tensors
+            device = None
+            if hasattr(self.env, "device"):
+                device = self.env.device
+            elif hasattr(self.env, "unwrapped") and hasattr(self.env.unwrapped, "device"):
+                device = self.env.unwrapped.device
+            # Fallback: if the first done is a tensor, use its device
+            elif len(self.done) > 0 and isinstance(self.done[0], torch.Tensor):
+                device = self.done[0].device
+
+            self.done.append(to_1d_tensor(done, device=device))
             self._add_info(info)
 
         observation = self._get_obs(self.n_obs_steps)
         reward = aggregate(self.reward, self.reward_agg_method)
         done = aggregate(self.done, 'max')
+        if isinstance(done, torch.Tensor) and done.ndim == 0:
+            done = done.unsqueeze(0)
+        elif isinstance(done, np.ndarray) and done.ndim == 0:
+            done = done[None]
         info = dict_take_last_n(self.info, self.n_obs_steps)
+        if "success" in info:
+            # info["success"] is now a stack (n_obs_steps, num_envs)
+            # Aggregate with logical OR along the time axis
+            # info["success"] = np.any(info["success"], axis=0)
+            # or, if using torch:
+            info["success"] = torch.any(info["success"], dim=0)
         return observation, reward, done, truncated, info
 
     def _get_obs(self, n_steps=1):
