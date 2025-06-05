@@ -146,7 +146,7 @@ class ManiSkillEnv(gym.Wrapper):
         self.cur_step = 0
 
         robot_state = raw_obs["state"]
-        print("robot_state.shape", robot_state.shape)
+        # print("robot_state.shape", robot_state.shape)
         point_cloud = self.get_point_cloud(raw_obs, use_point_crop=self.use_point_crop, use_rgb=self.use_pc_color)
 
         obs_dict = {

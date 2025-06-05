@@ -195,7 +195,7 @@ class DP3(BasePolicy):
         Do = self.obs_feature_dim
         To = self.n_obs_steps
         # print("To is: ", To)
-        print()
+        # print()
         # build input
         device = self.device
         dtype = self.dtype

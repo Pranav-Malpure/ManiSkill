@@ -127,6 +127,7 @@ class LinearNormalizer(DictOfTensorMixin):
         
         result = dict()
         for key, group in input_stats.items():
+            
             this_dict = dict()
             for name, value in group.items():
                 this_dict[name] = self.normalize({key:value})[key]

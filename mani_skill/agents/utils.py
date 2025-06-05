@@ -16,7 +16,7 @@ def get_active_joint_indices(articulation: Articulation, joint_names: Sequence[s
     """get the indices of the provided joint names from the Articulation's list of active joints"""
     all_joint_names = [x.name for x in articulation.get_active_joints()]
     joint_indices = [all_joint_names.index(x) for x in joint_names]
-    return common.to_tensor(joint_indices, dtype=torch.int64)
+    return common.to_tensor(joint_indices).int()
 
 
 def get_joints_by_names(articulation: Articulation, joint_names: Sequence[str]):

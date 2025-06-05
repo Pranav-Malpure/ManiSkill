@@ -124,6 +124,8 @@ def make_eval_envs(
                 source_type="3d_diffusion_policy",
                 source_desc="3d_diffusion_policy evaluation rollout",
                 max_steps_per_video=max_episode_steps,
+                video_fps=30, 
+                wandb_video_freq=10000//25
             )
         env = ManiSkillEnv(
             MultiStepWrapper(env=env,
@@ -135,7 +137,7 @@ def make_eval_envs(
             use_point_crop=use_point_crop,
             num_points=num_points,
         )
-        env = ManiSkillVectorEnv(env, ignore_terminations=True, record_metrics=True)
+        env = ManiSkillVectorEnv(env, ignore_terminations=True, record_metrics=True, auto_reset=False)
     return env
 
 class ManiSkillRunner(BaseRunner):
@@ -181,7 +183,7 @@ class ManiSkillRunner(BaseRunner):
             run_name = f"{task_name}__{exp_name}__{seed}__{int(time.time())}"
         else:
             run_name = exp_name
-
+        print("max_steps:", max_steps)
         self.env = make_eval_envs(
             task_name,
             num_eval_envs,
@@ -231,6 +233,7 @@ class ManiSkillRunner(BaseRunner):
             done = False
             traj_reward = 0
             is_success = False
+            print("GOING INSIDE WHILE LOOP")
             while not done:
                 np_obs_dict = dict(obs)
                 # obs_dict = dict_apply(np_obs_dict,
@@ -250,28 +253,37 @@ class ManiSkillRunner(BaseRunner):
                                             lambda x: x.detach().to('cpu').numpy())
                 action = np_action_dict['action'].squeeze(0)
 
-                obs, reward, done, _, info = env.step(action)
-
+                obs, reward, terminations, truncations, info = env.step(action)
+                done = torch.logical_or(terminations, truncations)
+                if done.any() == True:
+                    print("TRUE RECD")
+                    print()
                 traj_reward += reward
                 # done = np.all(done)
                 done = done.item() if isinstance(done, torch.Tensor) else bool(np.all(done))
+                # print("DONE VALUE", done)
                 is_success = is_success or max(info['success'])
 
             all_success_rates.append(is_success)
             all_traj_rewards.append(traj_reward)
-
+        # print("WHILE LOOP BROKEN")
         max_rewards = collections.defaultdict(list)
         log_data = dict()
+        print(type(all_traj_rewards))
+        print((all_traj_rewards))
+        all_traj_rewards_cpu = [x.cpu().numpy() for x in all_traj_rewards]
+        log_data['mean_traj_rewards'] = np.mean(all_traj_rewards_cpu)
 
-        log_data['mean_traj_rewards'] = np.mean(all_traj_rewards)
-        log_data['mean_success_rates'] = np.mean(all_success_rates)
+        # log_data['mean_traj_rewards'] = np.mean(all_traj_rewards.cpu().numpy())
+        all_success_rates_cpu = [x.cpu().numpy() for x in all_success_rates]
+        log_data['mean_success_rates'] = np.mean(all_success_rates_cpu)
+        # log_data['mean_success_rates'] = np.mean(all_success_rates.cpu().numpy())
+        log_data['test_mean_score'] = np.mean(all_success_rates_cpu)
 
-        log_data['test_mean_score'] = np.mean(all_success_rates)
+        cprint(f"test_mean_score: {np.mean(all_success_rates_cpu)}", 'green')
 
-        cprint(f"test_mean_score: {np.mean(all_success_rates)}", 'green')
-
-        self.logger_util_test.record(np.mean(all_success_rates))
-        self.logger_util_test10.record(np.mean(all_success_rates))
+        self.logger_util_test.record(np.mean(all_success_rates_cpu))
+        self.logger_util_test10.record(np.mean(all_success_rates_cpu))
         log_data['SR_test_L3'] = self.logger_util_test.average_of_largest_K()
         log_data['SR_test_L5'] = self.logger_util_test10.average_of_largest_K()
 
