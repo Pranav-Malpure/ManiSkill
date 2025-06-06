@@ -74,9 +74,9 @@ class GolfBallEnv(BaseEnv):
         )
         self.table_scene.build()
 
-        self.tool = actors.build_cuboid(
+        self.tool = actors.build_box(
             self.scene,
-            size=[self.tool_length, self.tool_width, self.tool_height],
+            half_sizes=[self.tool_length / 2, self.tool_width / 2, self.tool_height / 2],
             color=[0.8, 0.2, 0, 1],  # red
             name="tool",
             initial_pose=sapien.Pose(p=[0, 0, 0.1]),
@@ -184,7 +184,7 @@ class GolfBallEnv(BaseEnv):
 
     def compute_dense_reward(self, obs: Any, action: Array, info: Dict):
         tcp_to_tool_dist = torch.linalg.norm(
-            self.tool.pose.p - self.agent.tcp.pose.p, axis=1
+            self.tool.pose.p - self.agent.tcp.pose.p + self.tool_height/2, axis=1
         )
         reaching_reward = 1 - torch.tanh(5 * tcp_to_tool_dist)
         reward = reaching_reward
@@ -198,7 +198,8 @@ class GolfBallEnv(BaseEnv):
         tool_hit_pose = Pose.create_from_pq(
             p=self.ball.pose.p + unit_vec * (self.ball_radius + 0.05),
         )
-        tool_to_hit_pose = tool_hit_pose.p - self.tool.pose.p
+        tool_contact_point_pose = Pose.create_from_pq(self.tool.pose.p + np.array([0, 0, -self.tool_height/2+self.ball_radius]), q = [1, 0, 0, 0])
+        tool_to_hit_pose = tool_hit_pose.p - tool_contact_point_pose.p
         tool_to_hit_pose_dist = torch.linalg.norm(tool_to_hit_pose, axis=1)
         self.reached_status[tool_to_hit_pose_dist < 0.04] = 1.0
         reaching_reward = 1 - torch.tanh(2 * tool_to_hit_pose_dist)
