@@ -126,7 +126,7 @@ class GolfBallEnv(BaseEnv):
                 xyz_tool[..., 1] = torch.rand((b)) * 0.2 + 0.5
                 xyz_tool[..., 2] = self.tool_height
                 q_tool = [1, 0, 0, 0]
-                if torch.linalg.norm(xyz - xyz_tool, axis=1) > 0.1:
+                if (torch.linalg.norm(xyz - xyz_tool, axis=1) > 0.1).all():
                     break
 
             obj_pose = Pose.create_from_pq(p=xyz, q=q)
@@ -198,7 +198,9 @@ class GolfBallEnv(BaseEnv):
         tool_hit_pose = Pose.create_from_pq(
             p=self.ball.pose.p + unit_vec * (self.ball_radius + 0.05),
         )
-        tool_contact_point_pose = Pose.create_from_pq(self.tool.pose.p + np.array([0, 0, -self.tool_height/2+self.ball_radius]), q = [1, 0, 0, 0])
+        offset = torch.tensor([0, 0, -self.tool_height/2 + self.ball_radius], device=self.tool.pose.p.device, dtype=self.tool.pose.p.dtype)
+        tool_contact_point = self.tool.pose.p + offset
+        tool_contact_point_pose = Pose.create_from_pq(tool_contact_point.cpu().numpy(), q=[1, 0, 0, 0])
         tool_to_hit_pose = tool_hit_pose.p - tool_contact_point_pose.p
         tool_to_hit_pose_dist = torch.linalg.norm(tool_to_hit_pose, axis=1)
         self.reached_status[tool_to_hit_pose_dist < 0.04] = 1.0

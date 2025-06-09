@@ -129,7 +129,7 @@ def print_params(model):
     cprint(f'----------------------------------', 'cyan')
 
 import numpy as np
-import pytorch3d.ops as torch3d_ops
+import pytorch3d_simplified.pytorch3d.ops as torch3d_ops
 
 def downsample_with_fps(points: np.ndarray, num_points: int = 1024):
     # fast point cloud sampling using torch3d
