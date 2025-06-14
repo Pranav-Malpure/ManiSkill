@@ -17,7 +17,7 @@ from mani_skill.utils.structs.pose import Pose
 from mani_skill.utils.structs.types import Array, GPUMemoryConfig, SimConfig
 
 
-@register_env("GolfBall-v1", max_episode_steps=80)
+@register_env("GolfBall-v1", max_episode_steps=100)
 class GolfBallEnv(BaseEnv):
     """
     **Task Description:**
@@ -38,9 +38,9 @@ class GolfBallEnv(BaseEnv):
 
     goal_radius: float = 0.1  # radius of the goal region
     ball_radius: float = 0.035  # radius of the ball
-    tool_height: float = 0.2  # height of the tool
-    tool_width: float = 0.08  # width of the tool
-    tool_length: float = 0.08  # length of the tool
+    tool_height: float = 0.12  # height of the tool
+    tool_width: float = 0.04 # width of the tool
+    tool_length: float = 0.04  # length of the tool
     reached_status: torch.Tensor
 
     def __init__(self, *args, robot_uids="panda", robot_init_qpos_noise=0.02, **kwargs):
@@ -74,6 +74,19 @@ class GolfBallEnv(BaseEnv):
         )
         self.table_scene.build()
 
+        # tool_builder = self.scene.create_actor_builder()
+        # # tool_builder.add_box_collision()
+        # tool_builder.add_box_collision(half_size=[0.06, 0.06, 0.015])
+        # tool_builder.add_box_visual(half_size=[0.06, 0.06, 0.015])
+        
+        # # Add top box collision and visual, offset by base height
+        # tool_builder.add_box_collision(half_size=[0.02, 0.02, 0.05], pose=sapien.Pose([0, 0, 0.065]))
+        # tool_builder.add_box_visual(half_size=[0.02, 0.02, 0.05], pose=sapien.Pose([0, 0, 0.065]))
+        
+        # # Build the complete tool
+        # tool_builder.initial_pose = sapien.Pose(p=[0, 0, 0.1])
+        # self.tool = tool_builder.build(name="tool")
+
         self.tool = actors.build_box(
             self.scene,
             half_sizes=[self.tool_length / 2, self.tool_width / 2, self.tool_height / 2],
@@ -88,16 +101,79 @@ class GolfBallEnv(BaseEnv):
             name="ball",
             initial_pose=sapien.Pose(p=[0, 0, 0.1]),
         )
+        
+        # Build goal post base
+        goal_post_builder = self.scene.create_actor_builder()
+        
+        table_width = 0.8 # meters (adjust if your table is different)
+        self.goal_post_width = table_width  # full width
+        self.goal_post_half_width = self.goal_post_width / 2  # 0.3
+        post_half_thickness = 0.02  # thick for stability
+        post_height = 0.2  # taller for visibility
+        self.wall_depth = 0.16  # thickness in y direction
+        back_wall_y_offset = -self.wall_depth / 2  # how far 'back' the back wall is from the posts
 
-        self.goal_region = actors.build_red_white_target(
-            self.scene,
-            radius=self.goal_radius,
-            thickness=1e-5,
-            name="goal_region",
-            add_collision=False,
-            body_type="kinematic",
-            initial_pose=sapien.Pose(p=[0, 0, 0.1]),
+        material = sapien.render.RenderMaterial()
+        material.base_color = [0.8, 0.8, 0.8, 1]  # Light gray
+
+        # Left wall (vertical post)
+        goal_post_builder.add_box_collision(
+            half_size=[post_half_thickness, self.wall_depth, post_height],
+            pose=sapien.Pose([-self.goal_post_half_width, 0, post_height])
         )
+        goal_post_builder.add_box_visual(
+            half_size=[post_half_thickness, self.wall_depth, post_height],
+            pose=sapien.Pose([-self.goal_post_half_width, 0, post_height]),
+            material=material
+        )
+
+        # Right wall (vertical post)
+        goal_post_builder.add_box_collision(
+            half_size=[post_half_thickness, self.wall_depth, post_height],
+            pose=sapien.Pose([self.goal_post_half_width, 0, post_height])
+        )
+        goal_post_builder.add_box_visual(
+            half_size=[post_half_thickness, self.wall_depth, post_height],
+            pose=sapien.Pose([self.goal_post_half_width, 0, post_height]),
+            material=material
+        )
+
+        # Back wall (horizontal bar at the back, connecting the tops of the posts)
+        goal_post_builder.add_box_collision(
+            half_size=[self.goal_post_half_width, self.wall_depth/4, post_height],
+            pose=sapien.Pose([0, back_wall_y_offset, post_height])
+        )
+        goal_post_builder.add_box_visual(
+            half_size=[self.goal_post_half_width, self.wall_depth/4, post_height],
+            pose=sapien.Pose([0, back_wall_y_offset, post_height]),
+            material=material
+        )
+
+        # Top wall (crossbar, horizontal bar at the very top, connecting the tops of the posts)
+        goal_post_builder.add_box_collision(
+            half_size=[self.goal_post_half_width, self.wall_depth, post_half_thickness],
+            pose=sapien.Pose([0, 0, 2*post_height])
+        )
+        goal_post_builder.add_box_visual(
+            half_size=[self.goal_post_half_width, self.wall_depth, post_half_thickness],
+            pose=sapien.Pose([0, 0, 2*post_height]),
+            material=material
+        )
+
+        # Place the center of the base at the desired location (e.g., [0, -0.8, 0.0])
+        goal_post_builder.initial_pose = sapien.Pose(p=[0.0, -0.8, 0.0])
+        self.goal_post = goal_post_builder.build_static(name="goal_post")
+
+        # self.goal_region = actors.build_red_white_target(
+        #     self.scene,
+        #     radius=self.goal_radius,
+        #     thickness=1e-5,
+        #     name="goal_region",
+        #     add_collision=False,
+        #     body_type="kinematic",
+        #     initial_pose=sapien.Pose(p=[0, 0, 0.1]),
+        # )
+
         self.reached_status = torch.zeros(self.num_envs, dtype=torch.float32)
 
     def _initialize_episode(self, env_idx: torch.Tensor, options: dict):
@@ -117,16 +193,16 @@ class GolfBallEnv(BaseEnv):
                     raise RuntimeError("Failed to spawn the tool")
                 xyz = torch.zeros((b, 3))
                 xyz[..., 0] = (torch.rand((b)) * 2 - 1) * 0.3 - 0.1
-                xyz[..., 1] = torch.rand((b)) * 0.2 + 0.5
+                xyz[..., 1] = torch.rand((b)) * 0.1 + 0.5
                 xyz[..., 2] = self.ball_radius
                 q = [1, 0, 0, 0]
 
                 xyz_tool = torch.zeros((b, 3))
                 xyz_tool[..., 0] = (torch.rand((b)) * 2 - 1) * 0.3 - 0.1
-                xyz_tool[..., 1] = torch.rand((b)) * 0.2 + 0.5
+                xyz_tool[..., 1] = torch.rand((b)) * 0.1 + 0.6
                 xyz_tool[..., 2] = self.tool_height
                 q_tool = [1, 0, 0, 0]
-                if (torch.linalg.norm(xyz - xyz_tool, axis=1) > 0.1).all():
+                if (torch.linalg.norm(xyz[..., :2] - xyz_tool[..., :2], axis=1) > 0).all():
                     break
 
             obj_pose = Pose.create_from_pq(p=xyz, q=q)
@@ -135,31 +211,56 @@ class GolfBallEnv(BaseEnv):
             tool_pose = Pose.create_from_pq(p=xyz_tool, q=q_tool)
             self.tool.set_pose(tool_pose)
 
-            xyz_goal = torch.zeros((b, 3))
-            xyz_goal[..., 0] = (torch.rand((b)) * 2 - 1) * 0.3 - 0.1
-            xyz_goal[..., 1] = torch.rand((b)) * 0.2 - 1.0 + self.goal_radius
-            xyz_goal[..., 2] = 1e-3
-            self.goal_region.set_pose(
-                Pose.create_from_pq(
-                    p=xyz_goal,
-                    q=euler2quat(0, np.pi / 2, 0),
-                )
-            )
+            # xyz_goal = torch.zeros((b, 3))
+            # # xyz_goal[..., 0] = (torch.rand((b)) * 2 - 1) * 0.3 - 0.1
+            # # xyz_goal[..., 1] = torch.rand((b)) * 0.2 - 1.0 + self.goal_radius
+            # xyz_goal[..., 0] = 0.0
+            # xyz_goal[..., 1] = -0.8
+            # xyz_goal[..., 2] = 1e-3
+            # self.goal_region.set_pose(
+            #     Pose.create_from_pq(
+            #         p=xyz_goal,
+            #         q=euler2quat(0, np.pi / 2, 0),
+            #     )
+            # )
+            # self.goal_post.set_pose(
+            #     Pose.create_from_pq(
+            #         p=xyz_goal,
+            #         # q=euler2quat(0, np.pi / 2, 0),
+            #     )
+            # )
         self.reached_status[env_idx] = 0.0
 
     def evaluate(self):
 
-        is_obj_placed = (
-            torch.linalg.norm(
-                self.ball.pose.p[..., :2] - self.goal_region.pose.p[..., :2], axis=1
-            )
-            < self.goal_radius
+        # is_obj_placed = (
+        #     torch.linalg.norm(
+        #         self.ball.pose.p[..., :2] - self.goal_region.pose.p[..., :2], axis=1
+        #     )
+        #     < self.goal_radius
+        # )
+        # Goal post parameters (should match your construction)
+        goal_center_x = 0.0
+        goal_center_y = -0.8
+        goal_width = self.goal_post_width # meters
+        goal_half_width = goal_width / 2
+        back_wall_y = goal_center_y - (self.wall_depth / 2)  # matches your back_wall_y_offset
+
+        ball_x = self.ball.pose.p[..., 0]
+        ball_y = self.ball.pose.p[..., 1]
+
+        # Inside if between posts and in front of back wall
+        is_obj_in_goal = (
+            (ball_x > goal_center_x - goal_half_width) &
+            (ball_x < goal_center_x + goal_half_width) &
+            (ball_y > goal_center_y - self.wall_depth) &  # in front of the goal (assuming -y is 'back')
+            (ball_y < back_wall_y + self.wall_depth)
         )
         is_grasped = self.agent.is_grasping(self.tool)
 
 
         return {
-            "success": is_obj_placed & is_grasped,
+            "success": is_obj_in_goal & is_grasped,
             "is_grasped": is_grasped,
         }
 
@@ -170,11 +271,11 @@ class GolfBallEnv(BaseEnv):
         )
         if self.obs_mode_struct.use_state:
             obs.update(
-                goal_pos=self.goal_region.pose.p,
+                goal_pos=self.goal_post.pose.p,
                 ball_pose=self.ball.pose.raw_pose,
                 ball_vel=self.ball.linear_velocity,
                 tcp_to_ball_pos=self.ball.pose.p - self.agent.tcp.pose.p,
-                ball_to_goal_pos=self.goal_region.pose.p - self.ball.pose.p,
+                ball_to_goal_pos=self.goal_post.pose.p - self.ball.pose.p,
                 
                 tool_pose=self.tool.pose.raw_pose,
                 tool_to_ball_pos=self.ball.pose.p - self.tool.pose.p,
@@ -183,42 +284,54 @@ class GolfBallEnv(BaseEnv):
         return obs
 
     def compute_dense_reward(self, obs: Any, action: Array, info: Dict):
-        tcp_to_tool_dist = torch.linalg.norm(
-            self.tool.pose.p - self.agent.tcp.pose.p + self.tool_height/2, axis=1
+
+        
+
+        tool_z_offset_top = self.tool.pose.p.clone()
+        tool_z_offset_top[:, 2] += self.tool_height / 2 + 0.01
+        tcp_to_tool_top_offset_dist = torch.linalg.norm(
+            tool_z_offset_top - self.agent.tcp.pose.p, axis=1
         )
-        reaching_reward = 1 - torch.tanh(5 * tcp_to_tool_dist)
-        reward = reaching_reward
+        reaching_top_reward = 1 - torch.tanh(5 * tcp_to_tool_top_offset_dist)
+        reward = reaching_top_reward
 
         is_grasped = info["is_grasped"]
         reward += is_grasped
 
+        # joint_pos = torch.tensor(self.agent.robot.get_qpos(), dtype=torch.float32)
+        # joint_5_pos = joint_pos[..., 5]
+        # reward += (1 - torch.tanh(torch.abs(8*joint_5_pos)-2))/3 # to encourage the wrist to be close to 0
         
-        unit_vec = self.ball.pose.p - self.goal_region.pose.p
+        unit_vec = self.ball.pose.p - self.goal_post.pose.p
         unit_vec = unit_vec / torch.linalg.norm(unit_vec, axis=1, keepdim=True)
         tool_hit_pose = Pose.create_from_pq(
             p=self.ball.pose.p + unit_vec * (self.ball_radius + 0.05),
         )
         offset = torch.tensor([0, 0, -self.tool_height/2 + self.ball_radius], device=self.tool.pose.p.device, dtype=self.tool.pose.p.dtype)
         tool_contact_point = self.tool.pose.p + offset
-        tool_contact_point_pose = Pose.create_from_pq(tool_contact_point.cpu().numpy(), q=[1, 0, 0, 0])
+        tool_contact_point_pose = Pose.create_from_pq(tool_contact_point.cpu().numpy(), q=[1, 0, 0, 0], device=self.device)
         tool_to_hit_pose = tool_hit_pose.p - tool_contact_point_pose.p
         tool_to_hit_pose_dist = torch.linalg.norm(tool_to_hit_pose, axis=1)
         self.reached_status[tool_to_hit_pose_dist < 0.04] = 1.0
-        reaching_reward = 1 - torch.tanh(2 * tool_to_hit_pose_dist)
+        reaching_reward_2 = 1 - torch.tanh(2 * tool_to_hit_pose_dist)
 
         obj_to_goal_dist = torch.linalg.norm(
-            self.ball.pose.p[..., :2] - self.goal_region.pose.p[..., :2], axis=1
+            self.ball.pose.p[..., :2] - self.goal_post.pose.p[..., :2], axis=1
         )
 
         reached_reward = 1 - torch.tanh(obj_to_goal_dist)
 
-        reward = (
-            20 * reached_reward * self.reached_status*is_grasped
-            + reaching_reward * (1 - self.reached_status)*is_grasped
-            + self.reached_status*is_grasped
-        )
+        reward = reward + 20*reached_reward*self.reached_status*is_grasped + reaching_reward_2 * (1 - self.reached_status)*is_grasped + self.reached_status*is_grasped
+        # reward = (
+        #     reaching_reward * (~is_grasped) + 
+        #     20 * reached_reward * self.reached_status*is_grasped
+        #     + reaching_reward_2 * (1 - self.reached_status)*is_grasped
+        #     + self.reached_status*is_grasped
+        # )
 
-        reward[info["success"]] = 30.0
+        # reward[info["success"]] = 30.0*is_grasped
+        mask = info["success"].squeeze(-1) & is_grasped.squeeze(-1).bool()
+        reward[mask] = 30.0
         return reward
 
     def compute_normalized_dense_reward(self, obs: Any, action: Array, info: Dict):
