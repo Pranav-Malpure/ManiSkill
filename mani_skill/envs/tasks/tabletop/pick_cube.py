@@ -123,8 +123,11 @@ class PickCubeEnv(BaseEnv):
             torch.linalg.norm(self.goal_site.pose.p - self.cube.pose.p, axis=1)
             <= self.goal_thresh
         )
-        is_grasped = self.agent.is_grasping(self.cube)
-        # is_grasped = self.agent.is_grasping(self.cube_half_size, self.cube)
+        # Allegro hand robots have a different is_grasping signature
+        if isinstance(self.agent, (XArm6AllegroLeft, XArm6AllegroRight)):
+            is_grasped = self.agent.is_grasping(self.cube_half_size, self.cube)
+        else:
+            is_grasped = self.agent.is_grasping(self.cube)
         is_robot_static = self.agent.is_static(0.2) # threshold is 0.2 here
 
         return {

@@ -107,7 +107,7 @@ class XArm6AllegroRight(BaseAgent):
         "joint3",
         "joint4",
         "joint5",
-        # "joint6",
+        "joint6",
     ]
     gripper_joint_names = [
         "joint_0.0",
