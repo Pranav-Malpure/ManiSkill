@@ -10,7 +10,12 @@ from random import randint
 from typing import List, Optional, Tuple, Union
 
 import torch
-from pytorch3d import _C
+
+try:
+    from pytorch3d import _C
+    HAS_PYTORCH3D_C = True
+except ImportError:
+    HAS_PYTORCH3D_C = False
 
 
 def masked_gather(points: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
@@ -134,10 +139,15 @@ def sample_farthest_points(
             # pyre-fixme[6]: For 1st param expected `int` but got `Tensor`.
             start_idxs[n] = torch.randint(high=lengths[n], size=(1,)).item()
 
-    with torch.no_grad():
-        # pyre-fixme[16]: `pytorch3d_._C` has no attribute `sample_farthest_points`.
-        idx = _C.sample_farthest_points(points, lengths, K, start_idxs)
-    sampled_points = masked_gather(points, idx)
+    if HAS_PYTORCH3D_C:
+        # Use the fast version
+        with torch.no_grad():
+            # pyre-fixme[16]: `pytorch3d_._C` has no attribute `sample_farthest_points`.
+            idx = _C.sample_farthest_points(points, lengths, K, start_idxs)
+        sampled_points = masked_gather(points, idx)
+    else:
+        # Use the naive version
+        sampled_points, idx = sample_farthest_points_naive(points, lengths, K, random_start_point)
 
     return sampled_points, idx
 

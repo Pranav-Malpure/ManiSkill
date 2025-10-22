@@ -109,7 +109,8 @@ class ManiSkillEnv(gym.Wrapper):
 
         # Downsample pointclouds
         if point_cloud.shape[0] < self.num_points:
-            print("the number of points is less than ", self.num_points)
+            # print("the number of points is less than ", self.num_points)
+            pass
         if point_cloud.shape[0] > self.num_points:
             point_cloud = downsample_with_fps(point_cloud, num_points=self.num_points)
 

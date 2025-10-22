@@ -8,7 +8,7 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from termcolor import cprint
 import copy
 import time
-import pytorch3d.ops as torch3d_ops
+import pytorch3d_simplified.pytorch3d.ops as torch3d_ops
 
 from diffusion_policy_3d.model.common.normalizer import LinearNormalizer
 from diffusion_policy_3d.policy.base_policy import BasePolicy
