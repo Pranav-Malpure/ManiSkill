@@ -309,8 +309,8 @@ class PickCubeEnv(BaseEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        # return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
-        return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
+        # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
         self.agent.robot.get_qpos()
