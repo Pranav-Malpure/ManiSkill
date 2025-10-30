@@ -264,13 +264,15 @@ class PickCubeEnv(BaseEnv):
         mask_reached = tcp_to_obj_dist < (self.cube_half_size * np.sqrt(2) + 0.01)
         object_grabbing_closeness = self.agent.object_reward(self.cube)
         
-        reward[mask_reached] = (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))[mask_reached]
-        mask_thumb_close = object_grabbing_closeness[..., 0] < self.cube_half_size * np.sqrt(1.25)+ 0.013 
-        finger1_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 1]))
-        finger2_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 2]))
-        finger3_reward = (1 - torch.tanh(5 * object_grabbing_closeness[..., 3]))
+        # mask_thumb_close = object_grabbing_closeness[..., 0] < self.cube_half_size * np.sqrt(1.25)+ 0.013 
+        thumb_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 0]))
+        finger1_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 1]))
+        finger2_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 2]))
+        finger3_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 3]))
 
-        reward[mask_thumb_close] = (3 + (finger1_reward + finger2_reward + finger3_reward))[mask_thumb_close]
+        # reward[mask_reached] = (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))[mask_reached]
+        # reward[mask_thumb_close] = (3 + (finger1_reward + finger2_reward + finger3_reward))[mask_thumb_close]
+        reward[mask_reached] = (2 + (thumb_reward + finger1_reward + finger2_reward + finger3_reward))[mask_reached]
         
         is_grasped = info["is_grasped"]/2
         mask_grasp = is_grasped >= 1
