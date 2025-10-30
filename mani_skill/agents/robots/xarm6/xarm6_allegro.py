@@ -421,17 +421,27 @@ class XArm6AllegroRight(BaseAgent):
         #     thumb_force >= min_force, torch.logical_and(torch.abs(torch.cos(thumb_angle)) <= torch.cos(torch.tensor(max_angle, dtype=torch.float)), )
         # )
 
+        # Convert to acute angles (0° to 90°) to handle both directions of contact
+        thumb_acute_angle = torch.min(thumb_angle, torch.pi - thumb_angle)
+        finger1_acute_angle = torch.min(finger1_angle, torch.pi - finger1_angle)
+        finger2_acute_angle = torch.min(finger2_angle, torch.pi - finger2_angle)
+        finger3_acute_angle = torch.min(finger3_angle, torch.pi - finger3_angle)
+        
         thumb_flag = torch.logical_and(
-            thumb_force >= min_force, torch.abs(torch.cos(thumb_angle)) <= torch.cos(torch.deg2rad(torch.tensor(max_angle, dtype=torch.float)))
+            thumb_force >= min_force, 
+            torch.rad2deg(thumb_acute_angle) <= max_angle
         )
         finger1_flag = torch.logical_and(
-            finger1_force >= min_force, torch.abs(torch.cos(finger1_angle)) <= torch.cos(torch.deg2rad(torch.tensor(max_angle, dtype=torch.float)))
+            finger1_force >= min_force, 
+            torch.rad2deg(finger1_acute_angle) <= max_angle
         )
         finger2_flag = torch.logical_and(
-            finger2_force >= min_force, torch.abs(torch.cos(finger2_angle)) <= torch.cos(torch.deg2rad(torch.tensor(max_angle, dtype=torch.float)))
+            finger2_force >= min_force, 
+            torch.rad2deg(finger2_acute_angle) <= max_angle
         )
         finger3_flag = torch.logical_and(
-            finger3_force >= min_force, torch.abs(torch.cos(finger3_angle)) <= torch.cos(torch.deg2rad(torch.tensor(max_angle, dtype=torch.float)))
+            finger3_force >= min_force, 
+            torch.rad2deg(finger3_acute_angle) <= max_angle
         )
 
         # Debug prints
@@ -445,10 +455,17 @@ class XArm6AllegroRight(BaseAgent):
         finger2_angle_deg = torch.rad2deg(finger2_angle).item() if finger2_angle.numel() == 1 else torch.rad2deg(finger2_angle)[0].item()
         finger3_angle_deg = torch.rad2deg(finger3_angle).item() if finger3_angle.numel() == 1 else torch.rad2deg(finger3_angle)[0].item()
         
+        thumb_acute_angle_deg = torch.rad2deg(thumb_acute_angle).item() if thumb_acute_angle.numel() == 1 else torch.rad2deg(thumb_acute_angle)[0].item()
+        finger1_acute_angle_deg = torch.rad2deg(finger1_acute_angle).item() if finger1_acute_angle.numel() == 1 else torch.rad2deg(finger1_acute_angle)[0].item()
+        finger2_acute_angle_deg = torch.rad2deg(finger2_acute_angle).item() if finger2_acute_angle.numel() == 1 else torch.rad2deg(finger2_acute_angle)[0].item()
+        finger3_acute_angle_deg = torch.rad2deg(finger3_acute_angle).item() if finger3_acute_angle.numel() == 1 else torch.rad2deg(finger3_acute_angle)[0].item()
+        
         print(f"[Grasp Check] Forces (min={min_force:.2f}): "
               f"Thumb={thumb_force_val:.3f} F1={finger1_force_val:.3f} F2={finger2_force_val:.3f} F3={finger3_force_val:.3f}")
-        print(f"[Grasp Check] Angles (max={max_angle}°): "
+        print(f"[Grasp Check] Raw Angles: "
               f"Thumb={thumb_angle_deg:.1f}° F1={finger1_angle_deg:.1f}° F2={finger2_angle_deg:.1f}° F3={finger3_angle_deg:.1f}°")
+        print(f"[Grasp Check] Acute Angles (max={max_angle}°): "
+              f"Thumb={thumb_acute_angle_deg:.1f}° F1={finger1_acute_angle_deg:.1f}° F2={finger2_acute_angle_deg:.1f}° F3={finger3_acute_angle_deg:.1f}°")
         print(f"[Grasp Check] Flags: "
               f"Thumb={thumb_flag.item() if thumb_flag.numel() == 1 else thumb_flag[0].item()} "
               f"F1={finger1_flag.item() if finger1_flag.numel() == 1 else finger1_flag[0].item()} "
