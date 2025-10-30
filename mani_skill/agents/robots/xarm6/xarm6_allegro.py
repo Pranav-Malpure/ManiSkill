@@ -434,6 +434,27 @@ class XArm6AllegroRight(BaseAgent):
             finger3_force >= min_force, torch.abs(torch.cos(finger3_angle)) <= torch.cos(torch.deg2rad(torch.tensor(max_angle, dtype=torch.float)))
         )
 
+        # Debug prints
+        thumb_force_val = thumb_force.item() if thumb_force.numel() == 1 else thumb_force[0].item()
+        finger1_force_val = finger1_force.item() if finger1_force.numel() == 1 else finger1_force[0].item()
+        finger2_force_val = finger2_force.item() if finger2_force.numel() == 1 else finger2_force[0].item()
+        finger3_force_val = finger3_force.item() if finger3_force.numel() == 1 else finger3_force[0].item()
+        
+        thumb_angle_deg = torch.rad2deg(thumb_angle).item() if thumb_angle.numel() == 1 else torch.rad2deg(thumb_angle)[0].item()
+        finger1_angle_deg = torch.rad2deg(finger1_angle).item() if finger1_angle.numel() == 1 else torch.rad2deg(finger1_angle)[0].item()
+        finger2_angle_deg = torch.rad2deg(finger2_angle).item() if finger2_angle.numel() == 1 else torch.rad2deg(finger2_angle)[0].item()
+        finger3_angle_deg = torch.rad2deg(finger3_angle).item() if finger3_angle.numel() == 1 else torch.rad2deg(finger3_angle)[0].item()
+        
+        print(f"[Grasp Check] Forces (min={min_force:.2f}): "
+              f"Thumb={thumb_force_val:.3f} F1={finger1_force_val:.3f} F2={finger2_force_val:.3f} F3={finger3_force_val:.3f}")
+        print(f"[Grasp Check] Angles (max={max_angle}°): "
+              f"Thumb={thumb_angle_deg:.1f}° F1={finger1_angle_deg:.1f}° F2={finger2_angle_deg:.1f}° F3={finger3_angle_deg:.1f}°")
+        print(f"[Grasp Check] Flags: "
+              f"Thumb={thumb_flag.item() if thumb_flag.numel() == 1 else thumb_flag[0].item()} "
+              f"F1={finger1_flag.item() if finger1_flag.numel() == 1 else finger1_flag[0].item()} "
+              f"F2={finger2_flag.item() if finger2_flag.numel() == 1 else finger2_flag[0].item()} "
+              f"F3={finger3_flag.item() if finger3_flag.numel() == 1 else finger3_flag[0].item()}")
+
         # thumb_flag = torch.logical_and(
         #     thumb_force >= min_force, torch.rad2deg(thumb_angle) <= max_angle
         # )
@@ -447,6 +468,8 @@ class XArm6AllegroRight(BaseAgent):
         #     finger3_force >= min_force, torch.rad2deg(finger3_angle) <= max_angle
         # )
         confidence = torch.where(thumb_flag, (thumb_flag).int() + (finger1_flag).int() + (finger2_flag).int() + (finger3_flag).int(), torch.tensor(0, device=thumb_force.device))
+        confidence_val = confidence.item() if confidence.numel() == 1 else confidence[0].item()
+        print(f"[Grasp Check] Confidence: {confidence_val}")
         return confidence
         # return torch.logical_and(thumb_flag, torch.logical_and(finger1_flag, torch.logical_and(finger2_flag, finger3_flag)))
     

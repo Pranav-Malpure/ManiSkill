@@ -10,9 +10,9 @@ from mani_skill.agents.controllers.base_controller import DictController
 from mani_skill.envs.sapien_env import BaseEnv
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--robot-uid", type=str, default="panda", help="The id of the robot to place in the environment")
+    parser.add_argument("-r", "--robot-uid", type=str, default="xarm6_allegro_left", help="The id of the robot to place in the environment")
     parser.add_argument("-b", "--sim-backend", type=str, default="auto", help="Which simulation backend to use. Can be 'auto', 'cpu', 'gpu'")
-    parser.add_argument("-c", "--control-mode", type=str, default="pd_joint_pos", help="The control mode to use. Note that for new robots being implemented if the _controller_configs is not implemented in the selected robot, we by default provide two default controllers, 'pd_joint_pos' and 'pd_joint_delta_pos' ")
+    parser.add_argument("-c", "--control-mode", type=str, default="pd_joint_vel", help="The control mode to use. Note that for new robots being implemented if the _controller_configs is not implemented in the selected robot, we by default provide two default controllers, 'pd_joint_pos' and 'pd_joint_delta_pos' ")
     parser.add_argument("-k", "--keyframe", type=str, help="The name of the keyframe of the robot to display")
     parser.add_argument("--shader", default="default", type=str, help="Change shader used for rendering. Default is 'default' which is very fast. Can also be 'rt' for ray tracing and generating photo-realistic renders. Can also be 'rt-fast' for a faster but lower quality ray-traced renderer")
     parser.add_argument("--keyframe-actions", action="store_true", help="Whether to use the selected keyframe to set joint targets to try and hold the robot in its position")
@@ -33,7 +33,7 @@ def parse_args(args=None):
 def main():
     args = parse_args()
     env = gym.make(
-        "Empty-v1",
+        "PickCube-v1",
         obs_mode="none",
         reward_mode="none",
         enable_shadow=True,

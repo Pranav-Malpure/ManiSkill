@@ -13,13 +13,13 @@ from typing import List, Optional, Annotated, Union
 
 @dataclass
 class Args:
-    env_id: Annotated[str, tyro.conf.arg(aliases=["-e"])] = "PushCube-v1"
+    env_id: Annotated[str, tyro.conf.arg(aliases=["-e"])] = "PickCube-v1"
     """The environment ID of the task you want to simulate"""
 
     obs_mode: Annotated[str, tyro.conf.arg(aliases=["-o"])] = "none"
     """Observation mode"""
 
-    robot_uids: Annotated[Optional[str], tyro.conf.arg(aliases=["-r"])] = None
+    robot_uids: Annotated[Optional[str], tyro.conf.arg(aliases=["-r"])] = "xarm6_allegro_left"
     """Robot UID(s) to use. Can be a comma separated list of UIDs or empty string to have no agents. If not given then defaults to the environments default robot"""
 
     sim_backend: Annotated[str, tyro.conf.arg(aliases=["-b"])] = "auto"
@@ -31,7 +31,7 @@ class Args:
     num_envs: Annotated[int, tyro.conf.arg(aliases=["-n"])] = 1
     """Number of environments to run."""
 
-    control_mode: Annotated[Optional[str], tyro.conf.arg(aliases=["-c"])] = None
+    control_mode: Annotated[Optional[str], tyro.conf.arg(aliases=["-c"])] = "pd_joint_pos"
     """Control mode"""
 
     render_mode: str = "rgb_array"
@@ -105,8 +105,16 @@ def main(args: Args):
         if isinstance(viewer, sapien.utils.Viewer):
             viewer.paused = args.pause
         env.render()
+    step_count = 0
     while True:
-        action = env.action_space.sample() if env.action_space is not None else None
+        step_count += 1
+        if step_count < 100:
+            action = np.array([-0.18420285, 0.9518571, -1.0260674, 0.07931049, -1.3983101, -0.30424908, 0.196071, 0.16500048, -0.04299969, 0.4589999, 0.5558836, 0.6919993, 0.83500004, 1.1629996, 1.1811023, 0.86199987, 0.75199986, 1.073, 0.787687, 0.8339998, 0.8419998, 0.6059995])
+            action = np.array([-0.18420285, 0.9518571, -1.0260674, 0.07931049, -1.3983101, -0.30424908, 0.196071, 0.5558836, 1.1811023, 0.787687, 0.16500048, 0.6919993, 0.86199987, 0.8339998, -0.04299969,  0.83500004,   0.8419998, 0.75199986,0.4589999, 1.1629996,  1.073,   0.6059995])
+        # [-0.18470454, 0.942987, -1.0306842, 0.078895725, -1.4030671, -0.35149422, 0.23498785, 0.1890434, 0.10309123, 0.47108626, 0.9087353, 0.6134755, 1.0013807, 1.163295, 1.2018259, 0.8562573, 0.36618373, 1.3678932, 0.7815152, 0.8358489, 0.73654664, 0.6068629], cube position: -0.027503, -0.170930, 0.03
+        else:
+            action = None
+        # action = env.action_space.sample() if env.action_space is not None else None
         obs, reward, terminated, truncated, info = env.step(action)
         if verbose:
             print("reward", reward)
