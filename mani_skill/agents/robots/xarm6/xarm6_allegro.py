@@ -421,27 +421,38 @@ class XArm6AllegroRight(BaseAgent):
         #     thumb_force >= min_force, torch.logical_and(torch.abs(torch.cos(thumb_angle)) <= torch.cos(torch.tensor(max_angle, dtype=torch.float)), )
         # )
 
-        # Convert to acute angles (0° to 90°) to handle both directions of contact
-        thumb_acute_angle = torch.min(thumb_angle, torch.pi - thumb_angle)
-        finger1_acute_angle = torch.min(finger1_angle, torch.pi - finger1_angle)
-        finger2_acute_angle = torch.min(finger2_angle, torch.pi - finger2_angle)
-        finger3_acute_angle = torch.min(finger3_angle, torch.pi - finger3_angle)
+        # Angles less than (180 - max_angle) degrees indicate contact from the back side (not grasping)
+        # Only consider angles from (180 - max_angle) to 180 degrees as valid grasping angles
+        min_grasp_angle_rad = torch.deg2rad(torch.tensor(180.0 - max_angle, device=thumb_angle.device, dtype=thumb_angle.dtype))
+        max_grasp_angle_rad = torch.deg2rad(torch.tensor(180.0, device=thumb_angle.device, dtype=thumb_angle.dtype))
         
         thumb_flag = torch.logical_and(
             thumb_force >= min_force, 
-            torch.rad2deg(thumb_acute_angle) <= max_angle
+            torch.logical_and(
+                thumb_angle >= min_grasp_angle_rad,
+                thumb_angle <= max_grasp_angle_rad
+            )
         )
         finger1_flag = torch.logical_and(
             finger1_force >= min_force, 
-            torch.rad2deg(finger1_acute_angle) <= max_angle
+            torch.logical_and(
+                finger1_angle >= min_grasp_angle_rad,
+                finger1_angle <= max_grasp_angle_rad
+            )
         )
         finger2_flag = torch.logical_and(
             finger2_force >= min_force, 
-            torch.rad2deg(finger2_acute_angle) <= max_angle
+            torch.logical_and(
+                finger2_angle >= min_grasp_angle_rad,
+                finger2_angle <= max_grasp_angle_rad
+            )
         )
         finger3_flag = torch.logical_and(
             finger3_force >= min_force, 
-            torch.rad2deg(finger3_acute_angle) <= max_angle
+            torch.logical_and(
+                finger3_angle >= min_grasp_angle_rad,
+                finger3_angle <= max_grasp_angle_rad
+            )
         )
 
         # Debug prints
