@@ -42,8 +42,8 @@ class PickCubeEnv(BaseEnv):
         "xarm6_pandagripper"
     ]
     agent: Union[Panda, Fetch, XArm6Robotiq, XArm6AllegroLeft, XArm6AllegroRight, FloatingRobotiq2F85Gripper, XArm6PandaGripper]
-    cube_half_size_allegro = 0.03
-    cube_half_size = 0.03
+    cube_half_size_allegro = 0.035
+    cube_half_size = 0.035
     goal_thresh = 0.025
 
     def __init__(self, *args, robot_uids="panda", robot_init_qpos_noise=0.02, **kwargs):
