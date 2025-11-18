@@ -280,7 +280,7 @@ class PickCubeEnv(BaseEnv):
         obj_to_goal_dist = torch.linalg.norm(
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
-        place_reward = 2*(1 - torch.tanh(10 * obj_to_goal_dist))
+        place_reward = 6*(1 - torch.tanh(10 * obj_to_goal_dist))
         
         reward[mask_grasp] = (6 + place_reward)[mask_grasp]
 
@@ -305,7 +305,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward[info["success"]] = (9+5)
+        reward[info["success"]] = (12+5)
 
 
         return reward
