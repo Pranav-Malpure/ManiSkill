@@ -305,7 +305,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward[info["success"]] = (12+5)
+        reward[info["success"]] = (13+8)
 
 
         return reward
