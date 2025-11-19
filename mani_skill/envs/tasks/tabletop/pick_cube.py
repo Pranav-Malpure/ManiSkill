@@ -280,7 +280,7 @@ class PickCubeEnv(BaseEnv):
         obj_to_goal_dist = torch.linalg.norm(
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
-        place_reward = 6*(1 - torch.tanh(10 * obj_to_goal_dist))
+        place_reward = 2*(1 - torch.tanh(10 * obj_to_goal_dist))
         
         reward[mask_grasp] = (6 + place_reward)[mask_grasp]
 
@@ -294,7 +294,7 @@ class PickCubeEnv(BaseEnv):
             5 * torch.linalg.norm(qvel_without_gripper, axis=1)
         )
 
-        reward[info["is_obj_placed"]] = (static_reward + 8)[info["is_obj_placed"]]
+        reward[info["is_obj_placed"]] = (static_reward + 9)[info["is_obj_placed"]]
 
         # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
@@ -305,7 +305,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward[info["success"]] = (13+8)
+        reward[info["success"]] = (10+2) # 2 for success bonus
 
 
         return reward
@@ -313,7 +313,7 @@ class PickCubeEnv(BaseEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 12
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
