@@ -281,7 +281,7 @@ class PickCubeEnv(BaseEnv):
         obj_to_goal_dist = torch.linalg.norm(
             self.goal_site.pose.p - self.cube.pose.p, axis=1
         )
-        place_reward = 2*(1 - torch.tanh(10 * obj_to_goal_dist))
+        place_reward = 4*(1 - torch.tanh(10 * obj_to_goal_dist))
         
         reward[mask_grasp] = (6 + place_reward)[mask_grasp]
 
