@@ -251,6 +251,7 @@ class PickCubeEnv(BaseEnv):
         joint_5_pos = joint_pos[..., 4]
         # reward += torch.where(joint_5_pos < -0.75, 0.5, -0.5)
         reward = 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) - 1/(1 + torch.exp(5.8 * (-joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
+        reward = 1 / (1 + torch.exp(5.8 * (joint_5_pos + 1))) # 0.947 at -1.5 joint value, and 0.19 at -0.75 value. Check desmos for its graph
         
         mask_joint_pos = joint_pos[..., 4] < -1.25
         cube_position_z_offseted = self.cube.pose.p.clone()
