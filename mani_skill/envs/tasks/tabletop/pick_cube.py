@@ -266,10 +266,10 @@ class PickCubeEnv(BaseEnv):
         object_grabbing_closeness = self.agent.object_reward(self.cube)
         
         # mask_thumb_close = object_grabbing_closeness[..., 0] < self.cube_half_size * np.sqrt(1.25)+ 0.013 
-        thumb_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 0]))
-        finger1_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 1]))
-        finger2_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 2]))
-        finger3_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 3]))
+        thumb_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 0]))/2
+        finger1_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 1]))/2
+        finger2_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 2]))/2
+        finger3_reward = (1 - torch.tanh(10 * object_grabbing_closeness[..., 3]))/2
 
         # reward[mask_reached] = (2 + (1 - torch.tanh(5 * object_grabbing_closeness[..., 0])))[mask_reached]
         # reward[mask_thumb_close] = (3 + (finger1_reward + finger2_reward + finger3_reward))[mask_thumb_close]
@@ -283,7 +283,7 @@ class PickCubeEnv(BaseEnv):
         )
         place_reward = 4*(1 - torch.tanh(10 * obj_to_goal_dist))
         
-        reward[mask_grasp] = (6 + place_reward)[mask_grasp]
+        reward[mask_grasp] = (4 + place_reward)[mask_grasp]
 
 
         qvel_without_gripper = self.agent.robot.get_qvel()
@@ -306,7 +306,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward[info["success"]] = (12+2) # 2 for success bonus
+        reward[info["success"]] = (10+2) # 2 for success bonus
 
 
         return reward
@@ -314,7 +314,7 @@ class PickCubeEnv(BaseEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 12
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
