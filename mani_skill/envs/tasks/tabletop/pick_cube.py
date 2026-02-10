@@ -112,12 +112,17 @@ class PickCubeEnv(BaseEnv):
             # tcp_pose=self.agent.tcp.pose.raw_pose,
             # goal_pos=self.goal_site.pose.p,
         )
-        if "state" in self.obs_mode:
-            obs.update(
-                # obj_pose=self.cube.pose.raw_pose,
-                obj_to_tcp_pos=self.agent.tcp.pose.p - self.cube.pose.p,
-                obj_to_goal_pos=self.goal_site.pose.p - self.cube.pose.p,
-            )
+        obs.update(
+            # obj_pose=self.cube.pose.raw_pose,
+            obj_to_tcp_pos=self.agent.tcp.pose.p - self.cube.pose.p,
+            obj_to_goal_pos=self.goal_site.pose.p - self.cube.pose.p,
+        )
+        # if "state" in self.obs_mode:
+        #     obs.update(
+        #         # obj_pose=self.cube.pose.raw_pose,
+        #         obj_to_tcp_pos=self.agent.tcp.pose.p - self.cube.pose.p,
+        #         obj_to_goal_pos=self.goal_site.pose.p - self.cube.pose.p,
+        #     )
         return obs
 
     def evaluate(self):
