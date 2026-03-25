@@ -350,12 +350,12 @@ class XArm6AllegroRight(BaseAgent):
         Get the proprioceptive state of the agent.
         """
         obs = super().get_proprioception()
-        obs.update(
-            {
-                "palm_pose": self.palm_pose,
-                "tip_poses": self.tip_poses.reshape(-1, len(self.tip_links) * 7),
-            }
-        )
+        # obs.update(
+        #     {
+        #         "palm_pose": self.palm_pose,
+        #         "tip_poses": self.tip_poses.reshape(-1, len(self.tip_links) * 7),
+        #     }
+        # )
 
         return obs
 
