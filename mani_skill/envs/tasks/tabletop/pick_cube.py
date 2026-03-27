@@ -186,6 +186,8 @@ class PickCubeEnv(BaseEnv):
             qvel_without_gripper = qvel_without_gripper[..., :-6]
         elif self.robot_uids == "panda":
             qvel_without_gripper = qvel_without_gripper[..., :-2]
+        elif self.robot_uids in ("xarm6_allegro_left", "xarm6_allegro_right"):
+            qvel_without_gripper = qvel_without_gripper[..., :6]
         static_reward = 1 - torch.tanh(
             5 * torch.linalg.norm(qvel_without_gripper, axis=1)
         )
@@ -296,11 +298,13 @@ class PickCubeEnv(BaseEnv):
             qvel_without_gripper = qvel_without_gripper[..., :-6]
         elif self.robot_uids == "panda":
             qvel_without_gripper = qvel_without_gripper[..., :-2]
+        elif self.robot_uids in ("xarm6_allegro_left", "xarm6_allegro_right"):
+            qvel_without_gripper = qvel_without_gripper[..., :6]
         static_reward = 1 - torch.tanh(
             5 * torch.linalg.norm(qvel_without_gripper, axis=1)
         )
 
-        reward[info["is_obj_placed"]] = (static_reward + 9)[info["is_obj_placed"]]
+        reward[info["is_obj_placed"]] = (static_reward + 8)[info["is_obj_placed"]]
 
         # if tcp_to_obj_dist < self.cube_half_size*np.sqrt(2) + 0.01:
         #     reward += 1 - torch.tanh(5 * object_grabbing_closeness[...,0])
@@ -311,7 +315,7 @@ class PickCubeEnv(BaseEnv):
         # the below reward encourages pressing the cube with the gripper
         
                 
-        reward[info["success"]] = (10+5) # 2 for success bonus
+        reward[info["success"]] = (9+5) # 2 for success bonus
 
 
         return reward
@@ -319,7 +323,7 @@ class PickCubeEnv(BaseEnv):
     def compute_normalized_dense_reward(
         self, obs: Any, action: torch.Tensor, info: Dict
     ):
-        return self.compute_modified_reward(obs=obs, action=action, info=info) / 15
+        return self.compute_modified_reward(obs=obs, action=action, info=info) / 14
         # return self.compute_dense_reward(obs=obs, action=action, info=info) / 5
 
     def debug(self):
